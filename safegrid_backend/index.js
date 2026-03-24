@@ -15,18 +15,15 @@ app.post('/api/auth/login', (req, res) => {
   db.get(`SELECT * FROM users WHERE username = ?`, [username], (err, user) => {
     if (err) return res.status(500).json({error: 'Database error'});
     if (!user || user.password !== password) {
-      threatEngine.checkFailedLogins(db, username); // track failed logins
+      threatEngine.checkFailedLogins(db, username);
       return res.status(401).json({error: 'Invalid credentials'});
     }
-    
     threatEngine.resetFailedLogins(db, username);
-    threatEngine.verifyAccessSchedule(db, username);
-    
     res.json({ id: user.id, name: user.name, role: user.role, username: user.username });
   });
 });
 
-// --- Devices (Network Map) --- //
+// --- Devices --- //
 app.get('/api/devices', (req, res) => {
   db.all(`SELECT * FROM devices`, (err, rows) => {
     if(err) return res.status(500).json({error: err.message});
@@ -36,7 +33,6 @@ app.get('/api/devices', (req, res) => {
 });
 
 app.post('/api/devices', (req, res) => {
-  // To test unknown device insertion
   const { id = Date.now().toString(), name, ip, type, zone, isTrusted=0, status='online' } = req.body;
   const isTrustedInt = isTrusted ? 1 : 0;
   
@@ -49,11 +45,24 @@ app.post('/api/devices', (req, res) => {
   });
 });
 
-// --- Security Events (Alerts) --- //
+// --- Security Events (V1 compatibility) --- //
 app.get('/api/events', (req, res) => {
-  db.all(`SELECT * FROM security_events ORDER BY timestamp DESC`, (err, rows) => {
+  db.all(`SELECT * FROM security_events ORDER BY timestamp DESC`, (err, rows) => res.json(rows));
+});
+
+// --- Incidents (V2 Intelligence) --- //
+app.get('/api/incidents', (req, res) => {
+  db.all(`SELECT * FROM incidents ORDER BY startedAt DESC`, (err, incidents) => {
     if(err) return res.status(500).json({error: err.message});
-    res.json(rows);
+    db.all(`SELECT * FROM incident_events ORDER BY timestamp ASC`, (err, events) => {
+      const result = incidents.map(inc => {
+        return {
+          ...inc,
+          timeline: events.filter(e => e.incidentId === inc.id)
+        };
+      });
+      res.json(result);
+    });
   });
 });
 
@@ -69,23 +78,28 @@ app.get('/api/systems', (req, res) => {
 // --- Actions (Simulation Engine) --- //
 app.post('/api/simulate', (req, res) => {
   const { role } = req.body;
-  // Admin simulation restriction
-  if(role !== 'admin') return res.status(403).json({error: 'Unauthorized: Admins only can simulate attacks.'});
+  if(role !== 'admin') return res.status(403).json({error: 'Unauthorized'});
   
-  const event = threatEngine.simulateAttack(db);
-  res.json({ message: 'Attack sequence initiated', event });
+  threatEngine.simulateAttack(db);
+  res.json({ message: 'Ransomware sequence initiated' });
 });
 
 app.post('/api/reset', (req, res) => {
-  const { role } = req.body;
-  if(role !== 'admin') return res.status(403).json({error: 'Unauthorized'});
-
   db.run(`UPDATE devices SET status = 'online', isTrusted = 1`);
   db.run(`UPDATE critical_systems SET status = 'operational'`);
   db.run(`DELETE FROM security_events`);
   db.run(`DELETE FROM login_attempts`);
-  res.json({ message: 'Simulation reset completed' });
+  db.run(`DELETE FROM incidents`);
+  db.run(`DELETE FROM incident_events`);
+  
+  // reset correlation state
+  threatEngine.correlationState.recentFailedLogins = false;
+  threatEngine.correlationState.recentUnknownDevice = false;
+  threatEngine.correlationState.intrusionIncidentId = null;
+  threatEngine.correlationState.ransomwareId = null;
+  
+  res.json({ message: 'Engine reset completed' });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`SafeGrid Engine running on http://localhost:${PORT}`));
+const PORT = 3000;
+app.listen(PORT, () => console.log(`SafeGrid Engine V2 running on port ${PORT}`));

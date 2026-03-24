@@ -96,3 +96,45 @@ class CriticalSystem {
     );
   }
 }
+
+class IncidentEvent {
+  final String id;
+  final String incidentId;
+  final DateTime timestamp;
+  final String description;
+  final String? deviceId;
+
+  IncidentEvent({required this.id, required this.incidentId, required this.timestamp, required this.description, this.deviceId});
+
+  factory IncidentEvent.fromJson(Map<String, dynamic> json) {
+    return IncidentEvent(
+      id: json['id'],
+      incidentId: json['incidentId'],
+      timestamp: DateTime.parse(json['timestamp']),
+      description: json['description'],
+      deviceId: json['deviceId'],
+    );
+  }
+}
+
+class Incident {
+  final String id;
+  final String type;
+  final String severity;
+  final String status;
+  final DateTime startedAt;
+  final List<IncidentEvent> timeline;
+
+  Incident({required this.id, required this.type, required this.severity, required this.status, required this.startedAt, required this.timeline});
+
+  factory Incident.fromJson(Map<String, dynamic> json) {
+    return Incident(
+      id: json['id'],
+      type: json['type'],
+      severity: json['severity'],
+      status: json['status'],
+      startedAt: DateTime.parse(json['startedAt']),
+      timeline: (json['timeline'] as List?)?.map((e) => IncidentEvent.fromJson(e)).toList() ?? [],
+    );
+  }
+}

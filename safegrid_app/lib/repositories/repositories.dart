@@ -30,6 +30,11 @@ class DataRepository {
     return (res.data as List).map((e) => SecurityEvent.fromJson(e)).toList();
   }
 
+  Future<List<Incident>> getIncidents() async {
+    final res = await ApiClient.dio.get('/incidents');
+    return (res.data as List).map((e) => Incident.fromJson(e)).toList();
+  }
+
   Future<List<CriticalSystem>> getSystems() async {
     final res = await ApiClient.dio.get('/systems');
     return (res.data as List).map((e) => CriticalSystem.fromJson(e)).toList();

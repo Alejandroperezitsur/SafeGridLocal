@@ -1,43 +1,27 @@
-# 🛡️ SafeGrid Local - Checklist de Defensa Académica
+# 🛡️ SafeGrid Local V2 - Checklist de Defensa Académica
 
-Este documento está diseñado para ayudarte a defender el proyecto "SafeGrid Local" frente a tus profesores o evaluadores, justificando las decisiones de arquitectura, ciberseguridad y desarrollo.
+Este documento está diseñado para ayudarte a defender el proyecto "SafeGrid Local" como una simulación profesional ante tus profesores o evaluadores. 
 
-## 1. Arquitectura del Sistema (IT/OT)
-**Pregunta:** *¿Cómo está construida la aplicación y por qué?*
-**Respuesta:**
-- **Frontend (Flutter):** Elegido por su rendimiento y compilación nativa. Permite desplegar el "Centro de Control" en Desktop (Windows), Web o Móvil desde la misma base de código. Se usó el patrón **MVVM** junto con **Riverpod** para tener *Separation of Concerns*: la UI reacciona a los cambios en los proveedores de estado sin acoplarse a la lógica de red.
-- **Backend (Node.js + Express + SQLite):** Se diseñó bajo filosofía *Offline-first / Local Network*. En un entorno industrial (OT), los sistemas de monitoreo no deben depender de la nube pública (internet). SQLite almacena la simulación localmente, lo cual es rápido, transaccional y sobrevive reinicios.
+## 1. De Alertas a Inteligencia de Incidentes (V2)
+**Pregunta:** *¿Por qué un Motor de Incidentes en lugar de Alertas Simples?*
+**Respuesta:** En SOCs (Security Operations Centers) reales, la fatiga de alertas es el peor enemigo. Este motor realiza **Correlación de Eventos**. Por ejemplo, si el sistema detecta "Logins Fallidos" y luego un "Dispositivo Desconocido", el motor no escupe 2 alertas aisladas, sino que consolida la información en un **Incidente de Intrusión (Intrusion Attempt)** activo, y comienza a graficar una línea de tiempo para entender tácticas, técnicas y procedimientos (TTPs).
 
 ## 2. Segmentación de Red y Modelo Purdue (ISA/IEC 62443)
 **Pregunta:** *¿Cómo modelaste la red y qué es el modelo Purdue?*
-**Respuesta:**
-- El **Modelo Purdue** es un marco de referencia de arquitectura de seguridad para sistemas de control industrial (ICS).
-- En SafeGrid, dividimos los dispositivos en 3 zonas (ver `NetworkMapScreen`):
-  1. **Nivel 4/5 (IT Zone):** Red corporativa, routers, PCs de empleados.
-  2. **Nivel 3.5 (DMZ):** Zona desmilitarizada, servidores SCADA. Aisla el IT del OT.
-  3. **Niveles 1/2/3 (OT Zone):** PLCs y máquinas de producción (Agua, Energía, Textil).
-- **Justificación:** Si un atacante compromete un PC corporativo, la segmentación (VLANs/Firewalls) impide llegar directamente a los PLCs.
+**Respuesta:** Dividimos la arquitectura en 3 zonas: IT (Nivel 4/5), DMZ (Nivel 3.5) y OT (Niveles 1/2/3). Las mitigaciones en un modelo Purdue asumen que si un PC corporativo (IT) es comprometido, los servidores de DMZ previenen la infección directa a los PLC (OT).
 
-## 3. Motor de Detección de Amenazas (IDS/IPS Simulado)
-**Pregunta:** *¿Cómo funciona su lógica de detección?*
-**Respuesta:**
-- En `threatEngine.js`, implementamos reglas basadas en firma y comportamiento:
-  - **Fuerza Bruta:** Si un usuario (`login_attempts`) supera los 5 fallos, se alerta como Criticidad Alta.
-  - **Identidad de Dispositivo:** Dispositivos insertados sin la bandera de confianza (`isTrusted = false`) levantan alerta técnica (Medium).
-  - **Horario Fuera de Rango:** Acceso en la madrugada asume compromiso de credenciales.
-- Se inspira en estándares del NIST SP 800-82 para protección de OT.
+## 3. Simulación de Impacto Real en Cascada
+**Pregunta:** *¿Cómo modelaste el impacto en la infraestructura?*
+**Respuesta:** La aplicación utiliza dependencias cruzadas reales (ej. La Planta Tratadora de Agua requiere energía para operar. La Producción Textil requiere de ambas). 
+Cuando lanzamos el simulador de Ransomware, el motor `threatEngine` implementa un algoritmo de propagación temporal (con *delays*) que infecta dispositivos vecinos en la red OT. Al caer los controladores de Energía, su estatus cambia a "DOWN", lo que tira en cascada el sistema de Agua y finalmente detiene la Producción Textil, reflejando apagones reales como el ocurrido en *Colonial Pipeline*.
 
-## 4. Defensa en Profundidad (Defense in Depth) y Risk Score
-**Pregunta:** *¿Por qué el simulacro apaga sistemas específicos y cómo se mide el riesgo?*
-**Respuesta:**
-- **Propagación:** La función `simulateAttack` emula un Ransomware dirigido a la red OT. Al comprometer los PLCs, observamos la caída en cascada de los Sistemas Críticos (Ej. La Producción Textil depende del Agua y Energía).
-- **Risk Score:** Se calcula dinámicamente (`Alto * 3 + Medio * 2 + Bajo * 1`). Esto traduce logotipos técnicos complejos a una interfaz ejecutiva de semáforo verde-amarillo-rojo, demostrando alineación negocio-seguridad.
-
-## 5. Pruebas y Validación OBLIGATORIA
-- [x] **Conexión desconocida:** Se probó inyectando un dispositivo (`isTrusted: 0`) y la alerta aparece.
-- [x] **Intentos fallidos:** El test simula 6 intentos y registra correctamente "Brute Force".
-- [x] **Ataque:** El botón rojo (Ransomware) tumba los sistemas de Agua/Textil y el dashboard explota en nivel de Riesgo Alto (>16 puntos).
-- [x] **Controles de Acceso (IAM):** La API (`/api/simulate`) rechaza ejecuciones si el usuario no es `admin`.
+## 4. Defensa en Profundidad y Cálculo de Riesgo (Risk Score)
+**Pregunta:** *¿Cómo funciona su indicador de impacto?*
+**Respuesta:** Evaluamos el riesgo no solo por la cantidad de vulnerabilidades, sino por los incidentes activos.
+Risk Score = (Incidentes Críticos * 50) + (Incidentes Altos * 20) + Alertas Simples.
+Esto permite que el *Control Center* pase de verde a mostrar un **CRITICAL IMPACT** automáticamente si hay ransomware diseminándose, acortando el tiempo de respuesta (MTTD).
 
 ---
-**Tip final para el 10:** ¡Abre la app, entra como `admin/admin123` y muestra la pantalla del Mapa de Red al mismo tiempo que la simulación de ataque. El cambio visual instantáneo validará tu trabajo técnico!
+**🔥 Cierre de Ingeniería (Para el 10 Perfecto):**
+Durante tu defensa, presiona el botón "Simulate Ransomware" (iniciando sesión como `admin/admin123`) e invita a los sinodales a observar la pestaña **Incident Timeline**. Verán cómo los eventos se agregan en tiempo real uno a uno (con segundos de diferencia) demostrando la propagación progresiva del malware, mientras en la pestaña **Infrastructure** los sistemas se degradan en cascada.
+*(Es un simulador OT profesional, no un simple CRUD de base de datos).*

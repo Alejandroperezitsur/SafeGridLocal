@@ -5,46 +5,32 @@ const dbPath = path.resolve(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    role TEXT,
-    username TEXT UNIQUE,
-    password TEXT
-  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, name TEXT, role TEXT, username TEXT UNIQUE, password TEXT)`);
+  db.run(`CREATE TABLE IF NOT EXISTS devices (id TEXT PRIMARY KEY, name TEXT, ip TEXT, type TEXT, zone TEXT, isTrusted INTEGER, status TEXT, isIsolated INTEGER DEFAULT 0)`);
+  db.run(`CREATE TABLE IF NOT EXISTS security_events (id TEXT PRIMARY KEY, type TEXT, severity TEXT, timestamp TEXT, description TEXT)`);
+  db.run(`CREATE TABLE IF NOT EXISTS critical_systems (id TEXT PRIMARY KEY, name TEXT, status TEXT, dependencies TEXT)`);
+  db.run(`CREATE TABLE IF NOT EXISTS login_attempts (username TEXT PRIMARY KEY, attempts INTEGER, lastAttempt TEXT)`);
   
-  db.run(`CREATE TABLE IF NOT EXISTS devices (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    ip TEXT,
-    type TEXT,
-    zone TEXT,
-    isTrusted INTEGER,
-    status TEXT
-  )`);
-  
-  db.run(`CREATE TABLE IF NOT EXISTS security_events (
+  // Phase 2: Incident Engine
+  db.run(`CREATE TABLE IF NOT EXISTS incidents (
     id TEXT PRIMARY KEY,
     type TEXT,
     severity TEXT,
-    timestamp TEXT,
-    description TEXT
-  )`);
-  
-  db.run(`CREATE TABLE IF NOT EXISTS critical_systems (
-    id TEXT PRIMARY KEY,
-    name TEXT,
     status TEXT,
-    dependencies TEXT
+    startedAt TEXT,
+    affectedDevices TEXT,
+    affectedSystems TEXT
   )`);
   
-  db.run(`CREATE TABLE IF NOT EXISTS login_attempts (
-    username TEXT PRIMARY KEY,
-    attempts INTEGER,
-    lastAttempt TEXT
+  db.run(`CREATE TABLE IF NOT EXISTS incident_events (
+    id TEXT PRIMARY KEY,
+    incidentId TEXT,
+    timestamp TEXT,
+    description TEXT,
+    deviceId TEXT
   )`);
 
-  // Seed Users
+  // Seeds
   db.get('SELECT COUNT(*) as count FROM users', (err, row) => {
     if (row && row.count === 0) {
       db.run(`INSERT INTO users (id, name, role, username, password) VALUES ('u1', 'Admin', 'admin', 'admin', 'admin123')`);
@@ -53,7 +39,6 @@ db.serialize(() => {
     }
   });
 
-  // Seed Devices
   db.get('SELECT COUNT(*) as count FROM devices', (err, row) => {
     if (row && row.count === 0) {
       const devices = [
@@ -70,12 +55,12 @@ db.serialize(() => {
     }
   });
 
-  // Seed Critical Systems
   db.get('SELECT COUNT(*) as count FROM critical_systems', (err, row) => {
     if (row && row.count === 0) {
-      db.run(`INSERT INTO critical_systems (id, name, status, dependencies) VALUES ('cs1', 'Water Plant', 'operational', '["Energy", "Network"]')`);
-      db.run(`INSERT INTO critical_systems (id, name, status, dependencies) VALUES ('cs2', 'Energy Grid', 'operational', '["Network"]')`);
-      db.run(`INSERT INTO critical_systems (id, name, status, dependencies) VALUES ('cs3', 'Textile Production', 'operational', '["Energy", "Water"]')`);
+      // Re-map dependencies to be exact names for cascading logic
+      db.run(`INSERT INTO critical_systems (id, name, status, dependencies) VALUES ('cs1', 'Water Plant', 'operational', '["Energy Grid"]')`);
+      db.run(`INSERT INTO critical_systems (id, name, status, dependencies) VALUES ('cs2', 'Energy Grid', 'operational', '[]')`);
+      db.run(`INSERT INTO critical_systems (id, name, status, dependencies) VALUES ('cs3', 'Textile Production', 'operational', '["Energy Grid", "Water Plant"]')`);
     }
   });
 });
