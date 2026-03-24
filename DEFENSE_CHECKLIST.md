@@ -1,27 +1,32 @@
-# 🛡️ SafeGrid Local V2 - Checklist de Defensa Académica
+# 🛡️ SafeGrid Local V3 - Checklist de Defensa Académica
 
-Este documento está diseñado para ayudarte a defender el proyecto "SafeGrid Local" como una simulación profesional ante tus profesores o evaluadores. 
+Este documento está diseñado para ayudarte a defender el proyecto "SafeGrid Local" como una plataforma SOC (Security Operations Center) completa.
 
-## 1. De Alertas a Inteligencia de Incidentes (V2)
-**Pregunta:** *¿Por qué un Motor de Incidentes en lugar de Alertas Simples?*
-**Respuesta:** En SOCs (Security Operations Centers) reales, la fatiga de alertas es el peor enemigo. Este motor realiza **Correlación de Eventos**. Por ejemplo, si el sistema detecta "Logins Fallidos" y luego un "Dispositivo Desconocido", el motor no escupe 2 alertas aisladas, sino que consolida la información en un **Incidente de Intrusión (Intrusion Attempt)** activo, y comienza a graficar una línea de tiempo para entender tácticas, técnicas y procedimientos (TTPs).
+## 1. De Detección a Respuesta Activa (NIST Cybersecurity Framework)
+**Pregunta:** *¿Cómo aborda tu sistema los lineamientos del NIST?*
+**Respuesta:** El NIST CSF se basa en 5 pilares: Identificar, Proteger, Detectar, Responder y Recuperar. 
+SafeGrid V3 completó el ciclo integrando las fases de **Respuesta y Recuperación**. Ahora los operadores pueden intervenir activamente en la propagación de malware mediante acciones como aislar (Isolate) PLCs de la red OT, mitigando el impacto físico antes de que la degradación en cascada ocurra.
 
-## 2. Segmentación de Red y Modelo Purdue (ISA/IEC 62443)
-**Pregunta:** *¿Cómo modelaste la red y qué es el modelo Purdue?*
-**Respuesta:** Dividimos la arquitectura en 3 zonas: IT (Nivel 4/5), DMZ (Nivel 3.5) y OT (Niveles 1/2/3). Las mitigaciones en un modelo Purdue asumen que si un PC corporativo (IT) es comprometido, los servidores de DMZ previenen la infección directa a los PLC (OT).
+## 2. Microsegmentación Lógica y Aislamiento de Dispositivos
+**Pregunta:** *¿Qué pasa cuando aislo un dispositivo en tu interfaz?*
+**Respuesta:** Cuando un operador (con rol autorizado) hace click en "Isolate" sobre el Network Map, el backend actualiza la bandera `isIsolated = true` en la base de datos para simular una regla de firewall en el Switch del puerto (`Port Security` o `VLAN Isolation`). 
+El algoritmo de Ransomware de SafeGrid chequea este estado en tiempo real. Si el PLC está aislado, el malware interrumpe su ciclo de infección horizontal impidiendo el movimiento lateral hacia otros controladores industriales.
 
-## 3. Simulación de Impacto Real en Cascada
-**Pregunta:** *¿Cómo modelaste el impacto en la infraestructura?*
-**Respuesta:** La aplicación utiliza dependencias cruzadas reales (ej. La Planta Tratadora de Agua requiere energía para operar. La Producción Textil requiere de ambas). 
-Cuando lanzamos el simulador de Ransomware, el motor `threatEngine` implementa un algoritmo de propagación temporal (con *delays*) que infecta dispositivos vecinos en la red OT. Al caer los controladores de Energía, su estatus cambia a "DOWN", lo que tira en cascada el sistema de Agua y finalmente detiene la Producción Textil, reflejando apagones reales como el ocurrido en *Colonial Pipeline*.
+## 3. Explanability e Inteligencia de Causa Raíz (Root Cause Analysis)
+**Pregunta:** *¿Cómo sabe el operador por qué cayó el sistema de agua?*
+**Respuesta:** En entornos OT, explicar el impacto cibernético a los ingenieros de planta es difícil. Integré un motor de **Explicabilidad (Explanability)**. Cuando el motor detecta una falla en cascada (Ransomware -> Energía cae -> Agua y Textil caen por falta de suministro), computa un árbol de dependencias y escribe en lenguaje natural la causa raíz exacta (*"Why did this happen?"*) dentro de la pestaña del Incidente.
 
-## 4. Defensa en Profundidad y Cálculo de Riesgo (Risk Score)
-**Pregunta:** *¿Cómo funciona su indicador de impacto?*
-**Respuesta:** Evaluamos el riesgo no solo por la cantidad de vulnerabilidades, sino por los incidentes activos.
-Risk Score = (Incidentes Críticos * 50) + (Incidentes Altos * 20) + Alertas Simples.
-Esto permite que el *Control Center* pase de verde a mostrar un **CRITICAL IMPACT** automáticamente si hay ransomware diseminándose, acortando el tiempo de respuesta (MTTD).
+## 4. Recuperación Controlada
+**Pregunta:** *¿Cómo vuelve el sistema a la normalidad?*
+**Respuesta:** Una vez los dispositivos infectados son aislados, el operador en la pestaña "Incidents" declara el incidente como "CONTENIDO" (Contain Incident). Posteriormente, los equipos de mantenimiento físico purgan los PLCs, permitiendo que el operador presione "Recover System" en la interfaz. El motor levanta de nuevo el *Grid* de Energía, Agua y Textil a estado Operacional.
 
 ---
-**🔥 Cierre de Ingeniería (Para el 10 Perfecto):**
-Durante tu defensa, presiona el botón "Simulate Ransomware" (iniciando sesión como `admin/admin123`) e invita a los sinodales a observar la pestaña **Incident Timeline**. Verán cómo los eventos se agregan en tiempo real uno a uno (con segundos de diferencia) demostrando la propagación progresiva del malware, mientras en la pestaña **Infrastructure** los sistemas se degradan en cascada.
-*(Es un simulador OT profesional, no un simple CRUD de base de datos).*
+**🔥 Cierre de Ingeniería SOC (Para el 10 y uso en PORTAFOLIO TÉCNICO):**
+Durante tu defensa, usa esta coreografía:
+1. Inicia sesión como `admin`.
+2. Lanza el ataque de Ransomware. 
+3. Inmediatamente vete a "Network Map" y **Aisla (Isolate)** el segundo y tercer PLC. 
+4. Demuestra que solo el primero se infectó (porque actuaste rápido). 
+5. Ve a "Incidents" y clickea **Contain Incident**. Muestra el "Root Cause Analysis" (Explicación).
+6. Ve a "Infrastructure" y clickea **Recover System** para restaurar la normalidad.
+*(Has demostrado una simulación completa de Kill-Chain y Mitigación de Sistemas Críticos en Tiempo Real. Nivel Experto).*

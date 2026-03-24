@@ -8,6 +8,7 @@ class CriticalInfraScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final systemsAsync = ref.watch(systemsProvider);
+    final user = ref.watch(currentUserProvider);
 
     return systemsAsync.when(
       data: (systems) {
@@ -28,7 +29,7 @@ class CriticalInfraScreen extends ConsumerWidget {
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 1.5,
+                    childAspectRatio: 1.2,
                   ),
                   itemCount: systems.length,
                   itemBuilder: (context, index) {
@@ -62,6 +63,14 @@ class CriticalInfraScreen extends ConsumerWidget {
                             const Spacer(),
                             if(sys.dependencies.isNotEmpty)
                               Text('Depends on: ${sys.dependencies.join(', ')}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                            const Spacer(),
+                            if (sys.status != 'operational' && (user?.role == 'admin' || user?.role == 'operator'))
+                              FilledButton.icon(
+                                style: FilledButton.styleFrom(backgroundColor: Colors.blue),
+                                onPressed: () => ref.read(dataRepoProvider).recoverSystem(user!.role, sys.id),
+                                icon: const Icon(Icons.build),
+                                label: const Text('Recover System'),
+                              )
                           ],
                         ),
                       ),

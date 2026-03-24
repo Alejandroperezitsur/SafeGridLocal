@@ -47,4 +47,21 @@ class DataRepository {
   Future<void> resetSimulation(String role) async {
     await ApiClient.dio.post('/reset', data: {'role': role});
   }
+
+  // Phase 3 SOC Response API Commands
+  Future<void> isolateDevice(String role, String deviceId) async {
+    await ApiClient.dio.post('/respond/isolate', data: {'role': role, 'deviceId': deviceId});
+  }
+  
+  Future<void> shutdownZone(String role, String zone) async {
+    await ApiClient.dio.post('/respond/shutdown_zone', data: {'role': role, 'zone': zone});
+  }
+  
+  Future<void> containIncident(String role, String incidentId) async {
+    await ApiClient.dio.post('/respond/contain', data: {'role': role, 'incidentId': incidentId});
+  }
+  
+  Future<void> recoverSystem(String role, String systemId) async {
+    await ApiClient.dio.post('/respond/recover', data: {'role': role, 'systemId': systemId});
+  }
 }

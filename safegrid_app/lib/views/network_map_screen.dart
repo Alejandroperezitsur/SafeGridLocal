@@ -9,6 +9,7 @@ class NetworkMapScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devicesAsync = ref.watch(devicesProvider);
+    final user = ref.watch(currentUserProvider);
 
     return Scaffold(
       body: devicesAsync.when(
@@ -22,11 +23,11 @@ class NetworkMapScreen extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildZoneColumn(context, 'IT Zone (Level 4/5)', Colors.blue, itDevices),
+                _buildZoneColumn(context, ref, user, 'IT Zone (Level 4/5)', Colors.blue, 'IT', itDevices),
                 const VerticalDivider(width: 32, thickness: 2, color: Colors.grey),
-                _buildZoneColumn(context, 'DMZ (Level 3.5)', Colors.orange, dmzDevices),
+                _buildZoneColumn(context, ref, user, 'DMZ (Level 3.5)', Colors.orange, 'DMZ', dmzDevices),
                 const VerticalDivider(width: 32, thickness: 2, color: Colors.grey),
-                _buildZoneColumn(context, 'OT Zone (Level 1/2/3)', Colors.purple, otDevices),
+                _buildZoneColumn(context, ref, user, 'OT Zone (Level 1/2/3)', Colors.purple, 'OT', otDevices, hasShutdown: true),
               ],
             ),
           );
@@ -37,22 +38,25 @@ class NetworkMapScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildZoneColumn(BuildContext context, String title, Color color, List<Device> devices) {
+  Widget _buildZoneColumn(BuildContext context, WidgetRef ref, User? user, String title, Color color, String zoneId, List<Device> devices, {bool hasShutdown = false}) {
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: color),
-            ),
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 18),
+            decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(8), border: Border.all(color: color)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: Text(title, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 18))),
+                if (hasShutdown && user?.role == 'admin')
+                  IconButton(
+                    tooltip: 'Emergency OT Shutdown',
+                    icon: const Icon(Icons.power_settings_new, color: Colors.red),
+                    onPressed: () => ref.read(dataRepoProvider).shutdownZone(user!.role, zoneId),
+                  )
+              ],
             ),
           ),
           const SizedBox(height: 16),
@@ -69,29 +73,33 @@ class NetworkMapScreen extends ConsumerWidget {
                 Color cardColor = Colors.green.withOpacity(0.1);
                 Color borderColor = Colors.green;
                 
-                if (!d.isTrusted) {
+                if (d.isIsolated) {
+                  cardColor = Colors.grey.withOpacity(0.2);
+                  borderColor = Colors.grey;
+                } else if (!d.isTrusted) {
                   cardColor = Colors.orange.withOpacity(0.1);
                   borderColor = Colors.orange;
-                }
-                if (d.status == 'compromised') {
+                } else if (d.status == 'compromised') {
                   cardColor = Colors.red.withOpacity(0.2);
                   borderColor = Colors.red;
                 }
 
                 return Card(
-                  shape: RoundedRectangleBorder(
-                    side: BorderSide(color: borderColor, width: 1.5),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(side: BorderSide(color: borderColor, width: 1.5), borderRadius: BorderRadius.circular(8)),
                   color: cardColor,
                   child: ListTile(
                     leading: Icon(icon, color: borderColor),
-                    title: Text(d.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('IP: ${d.ip}\nStatus: ${d.status.toUpperCase()}'),
+                    title: Text(d.name, style: TextStyle(fontWeight: FontWeight.bold, decoration: d.isIsolated ? TextDecoration.lineThrough : null)),
+                    subtitle: Text('IP: ${d.ip}\nStatus: ${d.isIsolated ? 'ISOLATED' : d.status.toUpperCase()}'),
                     isThreeLine: true,
-                    trailing: d.isTrusted 
-                      ? const Icon(Icons.check_circle, color: Colors.green)
-                      : const Icon(Icons.warning, color: Colors.amber),
+                    trailing: (user?.role == 'admin' || user?.role == 'operator') && !d.isIsolated
+                      ? FilledButton.tonal(
+                          onPressed: () => ref.read(dataRepoProvider).isolateDevice(user!.role, d.id),
+                          child: const Text('Isolate', style: TextStyle(fontSize: 12)),
+                        )
+                      : d.isIsolated 
+                          ? const Icon(Icons.shield, color: Colors.blue)
+                          : const Icon(Icons.check_circle, color: Colors.green),
                   ),
                 );
               },

@@ -20,20 +20,13 @@ class Device {
   final String id;
   final String name;
   final String ip;
-  final String type; // router, pc, camera, plc
-  final String zone; // IT, OT, DMZ
+  final String type;
+  final String zone;
   final bool isTrusted;
   final String status;
+  final bool isIsolated;
 
-  Device({
-    required this.id,
-    required this.name,
-    required this.ip,
-    required this.type,
-    required this.zone,
-    required this.isTrusted,
-    required this.status,
-  });
+  Device({required this.id, required this.name, required this.ip, required this.type, required this.zone, required this.isTrusted, required this.status, required this.isIsolated});
 
   factory Device.fromJson(Map<String, dynamic> json) {
     return Device(
@@ -44,6 +37,7 @@ class Device {
       zone: json['zone'],
       isTrusted: json['isTrusted'] == true || json['isTrusted'] == 1,
       status: json['status'] ?? 'online',
+      isIsolated: json['isIsolated'] == true || json['isIsolated'] == 1,
     );
   }
 }
@@ -51,17 +45,11 @@ class Device {
 class SecurityEvent {
   final String id;
   final String type;
-  final String severity; // low, medium, high
+  final String severity; 
   final DateTime timestamp;
   final String description;
 
-  SecurityEvent({
-    required this.id,
-    required this.type,
-    required this.severity,
-    required this.timestamp,
-    required this.description,
-  });
+  SecurityEvent({required this.id, required this.type, required this.severity, required this.timestamp, required this.description});
 
   factory SecurityEvent.fromJson(Map<String, dynamic> json) {
     return SecurityEvent(
@@ -77,15 +65,10 @@ class SecurityEvent {
 class CriticalSystem {
   final String id;
   final String name;
-  final String status; // operational, degraded, down
+  final String status;
   final List<String> dependencies;
 
-  CriticalSystem({
-    required this.id,
-    required this.name,
-    required this.status,
-    required this.dependencies,
-  });
+  CriticalSystem({required this.id, required this.name, required this.status, required this.dependencies});
 
   factory CriticalSystem.fromJson(Map<String, dynamic> json) {
     return CriticalSystem(
@@ -124,8 +107,9 @@ class Incident {
   final String status;
   final DateTime startedAt;
   final List<IncidentEvent> timeline;
+  final String? explanation;
 
-  Incident({required this.id, required this.type, required this.severity, required this.status, required this.startedAt, required this.timeline});
+  Incident({required this.id, required this.type, required this.severity, required this.status, required this.startedAt, required this.timeline, this.explanation});
 
   factory Incident.fromJson(Map<String, dynamic> json) {
     return Incident(
@@ -135,6 +119,7 @@ class Incident {
       status: json['status'],
       startedAt: DateTime.parse(json['startedAt']),
       timeline: (json['timeline'] as List?)?.map((e) => IncidentEvent.fromJson(e)).toList() ?? [],
+      explanation: json['explanation'],
     );
   }
 }

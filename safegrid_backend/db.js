@@ -11,7 +11,7 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS critical_systems (id TEXT PRIMARY KEY, name TEXT, status TEXT, dependencies TEXT)`);
   db.run(`CREATE TABLE IF NOT EXISTS login_attempts (username TEXT PRIMARY KEY, attempts INTEGER, lastAttempt TEXT)`);
   
-  // Phase 2: Incident Engine
+  // Phase 3: Incident Engine Explanations
   db.run(`CREATE TABLE IF NOT EXISTS incidents (
     id TEXT PRIMARY KEY,
     type TEXT,
@@ -19,8 +19,12 @@ db.serialize(() => {
     status TEXT,
     startedAt TEXT,
     affectedDevices TEXT,
-    affectedSystems TEXT
+    affectedSystems TEXT,
+    explanation TEXT
   )`);
+  
+  // If table exists but no explanation column, try to alter (SQLite fallback)
+  db.run(`ALTER TABLE incidents ADD COLUMN explanation TEXT`, (err) => { /* ignore if exists */ });
   
   db.run(`CREATE TABLE IF NOT EXISTS incident_events (
     id TEXT PRIMARY KEY,
@@ -57,7 +61,6 @@ db.serialize(() => {
 
   db.get('SELECT COUNT(*) as count FROM critical_systems', (err, row) => {
     if (row && row.count === 0) {
-      // Re-map dependencies to be exact names for cascading logic
       db.run(`INSERT INTO critical_systems (id, name, status, dependencies) VALUES ('cs1', 'Water Plant', 'operational', '["Energy Grid"]')`);
       db.run(`INSERT INTO critical_systems (id, name, status, dependencies) VALUES ('cs2', 'Energy Grid', 'operational', '[]')`);
       db.run(`INSERT INTO critical_systems (id, name, status, dependencies) VALUES ('cs3', 'Textile Production', 'operational', '["Energy Grid", "Water Plant"]')`);
