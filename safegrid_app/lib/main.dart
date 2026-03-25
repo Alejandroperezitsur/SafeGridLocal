@@ -7,6 +7,7 @@ import 'views/network_map_screen.dart';
 import 'views/incidents_screen.dart';
 import 'views/critical_infra_screen.dart';
 import 'viewmodels/providers.dart';
+import 'views/widgets/educational_widgets.dart';
 
 void main() {
   runApp(const ProviderScope(child: SafeGridApp()));
@@ -69,36 +70,67 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
-    // Escuchar el proveedor de polling para que se actualice la info cada 2 segundos en todo el layout
     ref.watch(dashboardRefreshProvider);
-
     final isDesktop = MediaQuery.of(context).size.width >= 800;
+    final isLearningMode = ref.watch(learningModeProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('SafeGrid Control Center', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+          Row(
+            children: [
+              const Icon(Icons.school, size: 16, color: Colors.blueAccent),
+              const SizedBox(width: 4),
+              const Text('Modo Aprendizaje', style: TextStyle(fontSize: 10)),
+              Switch(
+                value: isLearningMode,
+                onChanged: (val) => ref.read(learningModeProvider.notifier).state = val,
+                activeColor: Colors.blueAccent,
+              ),
+            ],
+          ),
+          IconButton(
+            tooltip: 'Iniciar Guía Paso a Paso',
+            icon: const Icon(Icons.menu_book, color: Colors.blueAccent),
+            onPressed: () {
+              ref.read(demoStepProvider.notifier).state = 0;
+              ref.read(isDemoActiveProvider.notifier).state = true;
+            },
+          ),
           IconButton(icon: const Icon(Icons.logout), onPressed: () => context.go('/login')),
         ],
       ),
-      body: Row(
+      body: Stack(
         children: [
-          if (isDesktop)
-            NavigationRail(
-              backgroundColor: const Color(0xFF0F2537),
-              selectedIndex: _currentIndex,
-              onDestinationSelected: (index) => setState(() => _currentIndex = index),
-              extended: MediaQuery.of(context).size.width >= 1000,
-              labelType: MediaQuery.of(context).size.width >= 1000 ? NavigationRailLabelType.none : NavigationRailLabelType.all,
-              destinations: const [
-                NavigationRailDestination(icon: Icon(Icons.dashboard), label: Text('Dashboard')),
-                NavigationRailDestination(icon: Icon(Icons.account_tree), label: Text('Red / Purdue')),
-                NavigationRailDestination(icon: Icon(Icons.security), label: Text('Incidentes')),
-                NavigationRailDestination(icon: Icon(Icons.factory), label: Text('Infraestructura')),
-              ],
-            ),
-          if (isDesktop) const VerticalDivider(thickness: 1, width: 1),
-          Expanded(child: _screens[_currentIndex]),
+          Column(
+            children: [
+              const InsightPanel(),
+              Expanded(
+                child: Row(
+                  children: [
+                    if (isDesktop)
+                      NavigationRail(
+                        backgroundColor: const Color(0xFF0F2537),
+                        selectedIndex: _currentIndex,
+                        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+                        extended: MediaQuery.of(context).size.width >= 1000,
+                        labelType: MediaQuery.of(context).size.width >= 1000 ? NavigationRailLabelType.none : NavigationRailLabelType.all,
+                        destinations: const [
+                          NavigationRailDestination(icon: Icon(Icons.dashboard), label: Text('Dashboard')),
+                          NavigationRailDestination(icon: Icon(Icons.account_tree), label: Text('Red / Purdue')),
+                          NavigationRailDestination(icon: Icon(Icons.security), label: Text('Incidentes')),
+                          NavigationRailDestination(icon: Icon(Icons.factory), label: Text('Infraestructura')),
+                        ],
+                      ),
+                    if (isDesktop) const VerticalDivider(thickness: 1, width: 1),
+                    Expanded(child: _screens[_currentIndex]),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const TutorialOverlay(),
         ],
       ),
       bottomNavigationBar: isDesktop ? null : BottomNavigationBar(

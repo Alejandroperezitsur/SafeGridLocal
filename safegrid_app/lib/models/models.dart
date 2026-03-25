@@ -123,3 +123,22 @@ class Incident {
     );
   }
 }
+
+class Insight {
+  final String id;
+  final String type; // info, warning, critical, tip
+  final String title;
+  final String message;
+  final String? relatedEntityId;
+
+  Insight({required this.id, required this.type, required this.title, required this.message, this.relatedEntityId});
+}
+
+class DemoStep {
+  final String id;
+  final String instruction;
+  final String targetUIElement;
+  final String? title;
+
+  DemoStep({required this.id, required this.instruction, required this.targetUIElement, this.title});
+}

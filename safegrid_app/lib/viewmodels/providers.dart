@@ -45,3 +45,47 @@ final riskScoreProvider = Provider<int>((ref) {
   }
   return score;
 });
+
+final learningModeProvider = StateProvider<bool>((ref) => true);
+final isNewUserProvider = StateProvider<bool>((ref) => true);
+
+final insightsProvider = Provider<List<Insight>>((ref) {
+  final incidents = ref.watch(incidentsProvider).value ?? [];
+  final devices = ref.watch(devicesProvider).value ?? [];
+  final hasActiveRansomware = incidents.any((i) => i.type == 'ransomware' && i.status == 'active');
+  
+  List<Insight> list = [];
+  
+  if (hasActiveRansomware) {
+    list.add(Insight(
+      id: 'ins_ransom',
+      type: 'critical',
+      title: 'Propagación en Curso',
+      message: 'El ransomware está infectando la red OT. Usa la pestaña "Red" para aislar dispositivos inmediatamente.',
+    ));
+  }
+  
+  final unknownDevices = devices.where((d) => !d.isTrusted).length;
+  if (unknownDevices > 0) {
+    list.add(Insight(
+      id: 'ins_unknown',
+      type: 'warning',
+      title: 'Dispositivos No Confiables',
+      message: 'Se detectaron $unknownDevices dispositivos desconocidos. Esto podría ser el inicio de un movimiento lateral.',
+    ));
+  }
+
+  if (list.isEmpty) {
+    list.add(Insight(
+      id: 'ins_idle',
+      type: 'tip',
+      title: 'Estado Seguro',
+      message: 'Todo parece en orden. Tip: Revisa periódicamente el puntaje de riesgo para detectar anomalías silenciosas.',
+    ));
+  }
+  
+  return list;
+});
+
+final demoStepProvider = StateProvider<int>((ref) => 0);
+final isDemoActiveProvider = StateProvider<bool>((ref) => false);
