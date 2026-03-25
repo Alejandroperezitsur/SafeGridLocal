@@ -12,7 +12,7 @@ class IncidentsScreen extends ConsumerWidget {
 
     return incidentsAsync.when(
       data: (incidents) {
-        if (incidents.isEmpty) { return const Center(child: Text('No correlated incidents detected.', style: TextStyle(color: Colors.green, fontSize: 18))); }
+        if (incidents.isEmpty) { return const Center(child: Text('No hay incidentes correlacionados activos.', style: TextStyle(color: Colors.green, fontSize: 18))); }
 
         return ListView.builder(
           padding: const EdgeInsets.all(16),
@@ -32,8 +32,8 @@ class IncidentsScreen extends ConsumerWidget {
               child: ExpansionTile(
                 initiallyExpanded: !isContained,
                 leading: Icon(isContained ? Icons.shield : Icons.dangerous, color: isContained ? Colors.green : severityColor, size: 40),
-                title: Text('INCIDENT: ${inc.type.toUpperCase()}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isContained ? Colors.green : null)),
-                subtitle: Text('Status: ${inc.status.toUpperCase()} | Severity: ${inc.severity.toUpperCase()}\nStarted: ${inc.startedAt.toLocal()}'),
+                title: Text('INCIDENTE: ${inc.type.toUpperCase()}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: isContained ? Colors.green : null)),
+                subtitle: Text('Estado: ${inc.status.toUpperCase()} | Severidad: ${inc.severity.toUpperCase()}\nIniciado: ${inc.startedAt.toLocal()}'),
                 children: [
                   Container(
                     width: double.infinity,
@@ -45,12 +45,12 @@ class IncidentsScreen extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                             const Text('INCIDENT TIMELINE', style: TextStyle(fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                             const Text('LÍNEA DE TIEMPO DEL INCIDENTE', style: TextStyle(fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
                              if (!isContained && (user?.role == 'admin' || user?.role == 'operator'))
                                FilledButton.icon(
                                  onPressed: () => ref.read(dataRepoProvider).containIncident(user!.role, inc.id),
                                  icon: const Icon(Icons.lock),
-                                 label: const Text('Contain Incident'),
+                                 label: const Text('Contener Incidente'),
                                  style: FilledButton.styleFrom(backgroundColor: Colors.green),
                                )
                           ]
@@ -67,7 +67,7 @@ class IncidentsScreen extends ConsumerWidget {
                                   children: [
                                     Icon(Icons.psychology, color: Colors.blue),
                                     SizedBox(width: 8),
-                                    Text('AI ROOT CAUSE ANALYSIS (Why did this happen?)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 16)),
+                                    Text('ANÁLISIS DE CAUSA RAÍZ (IA)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 16)),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
@@ -86,7 +86,7 @@ class IncidentsScreen extends ConsumerWidget {
                                 Text('${event.timestamp.toLocal().toString().split('.')[0]} - ', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                                 Expanded(child: Text(event.description, style: const TextStyle(fontWeight: FontWeight.w500))),
                                 if (event.deviceId != null)
-                                  Chip(label: Text('Device: ${event.deviceId}'), visualDensity: VisualDensity.compact)
+                                  Chip(label: Text('Disp: ${event.deviceId}'), visualDensity: VisualDensity.compact)
                               ],
                             ),
                           );
@@ -101,7 +101,7 @@ class IncidentsScreen extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e,s) => Center(child: Text('Error loading incidents: $e')),
+      error: (e,s) => Center(child: Text('Error al cargar incidentes: $e')),
     );
   }
 }

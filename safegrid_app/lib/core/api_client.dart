@@ -1,19 +1,23 @@
 import 'package:dio/dio.dart';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 
 class ApiClient {
-  static String get baseUrl {
-    if (kIsWeb) return 'http://localhost:3000/api';
-    if (Platform.isAndroid) return 'http://10.0.2.2:3000/api';
-    return 'http://localhost:3000/api';
+  static String _baseUrl = 'http://127.0.0.1:3000'; // Default simulador local
+  
+  static void setServerIp(String ip) {
+    if (ip.trim().isEmpty) return;
+    String cleanIp = ip.trim();
+    if (!cleanIp.startsWith('http')) {
+      cleanIp = 'http://$cleanIp';
+    }
+    if (!cleanIp.contains(':3000')) {
+      cleanIp = '$cleanIp:3000';
+    }
+    _baseUrl = cleanIp;
   }
 
-  static final Dio _dio = Dio(BaseOptions(
-    baseUrl: baseUrl,
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 5),
+  static Dio get dio => Dio(BaseOptions(
+    baseUrl: '$_baseUrl/api',
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 10),
   ));
-
-  static Dio get dio => _dio;
 }

@@ -23,11 +23,11 @@ class NetworkMapScreen extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildZoneColumn(context, ref, user, 'IT Zone (Level 4/5)', Colors.blue, 'IT', itDevices),
+                _buildZoneColumn(context, ref, user, 'Zona IT (Nivel 4/5)', Colors.blue, 'IT', itDevices),
                 const VerticalDivider(width: 32, thickness: 2, color: Colors.grey),
-                _buildZoneColumn(context, ref, user, 'DMZ (Level 3.5)', Colors.orange, 'DMZ', dmzDevices),
+                _buildZoneColumn(context, ref, user, 'Zona DMZ (Nivel 3.5)', Colors.orange, 'DMZ', dmzDevices),
                 const VerticalDivider(width: 32, thickness: 2, color: Colors.grey),
-                _buildZoneColumn(context, ref, user, 'OT Zone (Level 1/2/3)', Colors.purple, 'OT', otDevices, hasShutdown: true),
+                _buildZoneColumn(context, ref, user, 'Zona OT (Nivel 1/2/3)', Colors.purple, 'OT', otDevices, hasShutdown: true),
               ],
             ),
           );
@@ -52,7 +52,7 @@ class NetworkMapScreen extends ConsumerWidget {
                 Expanded(child: Text(title, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 18))),
                 if (hasShutdown && user?.role == 'admin')
                   IconButton(
-                    tooltip: 'Emergency OT Shutdown',
+                    tooltip: 'Apagado de Emergencia OT',
                     icon: const Icon(Icons.power_settings_new, color: Colors.red),
                     onPressed: () => ref.read(dataRepoProvider).shutdownZone(user!.role, zoneId),
                   )
@@ -90,12 +90,12 @@ class NetworkMapScreen extends ConsumerWidget {
                   child: ListTile(
                     leading: Icon(icon, color: borderColor),
                     title: Text(d.name, style: TextStyle(fontWeight: FontWeight.bold, decoration: d.isIsolated ? TextDecoration.lineThrough : null)),
-                    subtitle: Text('IP: ${d.ip}\nStatus: ${d.isIsolated ? 'ISOLATED' : d.status.toUpperCase()}'),
+                    subtitle: Text('IP: ${d.ip}\nEstado: ${d.isIsolated ? 'AISLADO' : d.status.toUpperCase()}'),
                     isThreeLine: true,
                     trailing: (user?.role == 'admin' || user?.role == 'operator') && !d.isIsolated
                       ? FilledButton.tonal(
                           onPressed: () => ref.read(dataRepoProvider).isolateDevice(user!.role, d.id),
-                          child: const Text('Isolate', style: TextStyle(fontSize: 12)),
+                          child: const Text('Aislar', style: TextStyle(fontSize: 12)),
                         )
                       : d.isIsolated 
                           ? const Icon(Icons.shield, color: Colors.blue)

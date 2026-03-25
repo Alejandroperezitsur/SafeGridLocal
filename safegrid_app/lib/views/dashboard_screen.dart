@@ -1,130 +1,129 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../viewmodels/providers.dart';
-import 'network_map_screen.dart';
-import 'incidents_screen.dart'; // New V2 Incident Timeline Screen
-import 'critical_infra_screen.dart';
-import 'educational_screen.dart';
 
-class DashboardScreen extends ConsumerStatefulWidget {
+class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
-  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  int _currentIndex = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    ref.watch(dashboardRefreshProvider);
-    
+  Widget build(BuildContext context, WidgetRef ref) {
     final riskScore = ref.watch(riskScoreProvider);
     final user = ref.watch(currentUserProvider);
-    final incidentsAsync = ref.watch(incidentsProvider);
-    
-    Color riskColor = Colors.green;
-    String riskText = 'Low Impact';
-    
-    if (riskScore >= 50) { riskColor = Colors.purpleAccent; riskText = 'CRITICAL IMPACT'; }
-    else if (riskScore >= 20) { riskColor = Colors.redAccent; riskText = 'High Impact'; } 
-    else if (riskScore >= 10) { riskColor = Colors.amber; riskText = 'Medium Impact'; }
 
-    final pages = [
-      const NetworkMapScreen(),
-      const IncidentsScreen(), // V2
-      const CriticalInfraScreen(),
-      const EducationalScreen(),
-    ];
+    Color gaugeColor = Colors.green;
+    String riskLevel = 'BAJO';
+    if (riskScore >= 16) {
+      gaugeColor = Colors.red;
+      riskLevel = 'CRÍTICO';
+    } else if (riskScore >= 6) {
+      gaugeColor = Colors.orange;
+      riskLevel = 'MEDIO';
+    }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('ICS Intelligence Engine V2'),
-        actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Logged in as: ${user?.name} (${user?.role})', style: const TextStyle(fontWeight: FontWeight.bold)),
-            ),
-          ),
-          if (user?.role == 'admin')
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: FilledButton.icon(
-                style: FilledButton.styleFrom(backgroundColor: Colors.red[900]),
-                onPressed: () async {
-                  try {
-                    await ref.read(dataRepoProvider).simulateAttack(user!.role);
-                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ransomware Payload Executed!'), backgroundColor: Colors.red));
-                  } catch(e) {}
-                },
-                icon: const Icon(Icons.dangerous, color: Colors.white),
-                label: const Text('Simulate Ransomware', style: TextStyle(color: Colors.white)),
-              ),
-            ),
-          if (user?.role == 'admin')
-            IconButton(
-              tooltip: 'Reset Engine',
-              icon: const Icon(Icons.cloud_sync),
-              onPressed: () async {
-                await ref.read(dataRepoProvider).resetSimulation(user!.role);
-                if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Engine Reset')));
-              },
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Indicator V2
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 500),
-            color: riskColor.withOpacity(0.15),
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(riskScore >= 50 ? Icons.warning : Icons.security, color: riskColor, size: 48),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('REAL IMPACT: $riskText', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: riskColor, fontWeight: FontWeight.bold)),
-                    Text('Intelligence Score: $riskScore', style: Theme.of(context).textTheme.bodyLarge),
-                  ],
+                Text(
+                  'Visión General del Sistema',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 32),
-                // Show Active Incidents Count
-                incidentsAsync.when(
-                   data: (incs) {
-                     final activeCount = incs.where((i) => i.status == 'active').length;
-                     return Chip(
-                       backgroundColor: activeCount > 0 ? Colors.red : Colors.green,
-                       label: Text('$activeCount Active Incidents', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                     );
-                   },
-                   loading: () => const CircularProgressIndicator(),
-                   error: (e,s) => const SizedBox()
-                )
+                if (user?.role == 'admin')
+                  Row(
+                    children: [
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                        onPressed: () => ref.read(dataRepoProvider).simulateAttack(user!.role),
+                        icon: const Icon(Icons.warning),
+                        label: const Text('Simular Ransomware'),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(backgroundColor: Colors.grey),
+                        onPressed: () => ref.read(dataRepoProvider).resetSimulation(user!.role),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Reiniciar Engine'),
+                      ),
+                    ],
+                  )
               ],
             ),
-          ),
-          Expanded(
-            child: AnimatedSwitcher(duration: const Duration(milliseconds: 300), child: pages[_currentIndex]),
-          ),
-        ],
+            const SizedBox(height: 32),
+            Expanded(
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: Card(
+                      elevation: 4,
+                      color: gaugeColor.withOpacity(0.1),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('NIVEL DE IMPACTO', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 16),
+                            Icon(
+                              riskScore >= 16 ? Icons.dangerous : (riskScore >= 6 ? Icons.warning : Icons.check_circle),
+                              size: 100,
+                              color: gaugeColor,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(riskLevel, style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: gaugeColor)),
+                            Text('Puntuaje: $riskScore', style: const TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    flex: 2,
+                    child: Card(
+                      elevation: 4,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Métricas en Tiempo Real', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                            const Divider(),
+                            Expanded(
+                              child: GridView.count(
+                                crossAxisCount: 2,
+                                childAspectRatio: 2.5,
+                                children: [
+                                  _buildMetricTile('Zona IT Segura', Icons.computer, Colors.blue),
+                                  _buildMetricTile('Zona OT Monitoreada', Icons.precision_manufacturing, Colors.purple),
+                                  _buildMetricTile('Detección IDS/IPS', Icons.radar, Colors.teal),
+                                  _buildMetricTile('Defensa Múltiple Activa', Icons.layers, Colors.indigo),
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            )
+          ],
+        ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (i) => setState(()=> _currentIndex = i),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.hub), label: 'Network Map'),
-          BottomNavigationBarItem(icon: Icon(Icons.av_timer), label: 'Incident Timeline'),
-          BottomNavigationBarItem(icon: Icon(Icons.precision_manufacturing), label: 'Infrastructure'),
-          BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Education'),
-        ],
-      ),
+    );
+  }
+
+  Widget _buildMetricTile(String title, IconData icon, Color color) {
+    return ListTile(
+      leading: Icon(icon, color: color, size: 36),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: const Text('Óptimo'),
     );
   }
 }

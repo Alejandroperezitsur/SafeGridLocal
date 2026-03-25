@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../viewmodels/providers.dart';
+import '../core/api_client.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -13,11 +14,13 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _ipController = TextEditingController(text: '127.0.0.1');
   bool _isLoading = false;
 
   Future<void> _login() async {
     setState(() => _isLoading = true);
     try {
+      ApiClient.setServerIp(_ipController.text);
       final user = await ref.read(authRepoProvider).login(
             _usernameController.text,
             _passwordController.text,
@@ -29,7 +32,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+          SnackBar(content: Text('Error de conexión: Verifica tu IP y la red.\n$e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -59,12 +62,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       'SafeGrid Local',
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
-                    const Text('Critical Infrastructure Monitor'),
-                    const SizedBox(height: 32),
+                    const Text('Monitor de Infraestructura Crítica'),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: _ipController,
+                      decoration: const InputDecoration(
+                        labelText: 'IP del Servidor (Ej. 192.168.1.100)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.wifi),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     TextField(
                       controller: _usernameController,
                       decoration: const InputDecoration(
-                        labelText: 'Username',
+                        labelText: 'Usuario',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.person),
                       ),
@@ -74,7 +86,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _passwordController,
                       obscureText: true,
                       decoration: const InputDecoration(
-                        labelText: 'Password',
+                        labelText: 'Contraseña',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.lock),
                       ),
@@ -87,11 +99,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         onPressed: _isLoading ? null : _login,
                         child: _isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Access Control Center', style: TextStyle(fontSize: 16)),
+                            : const Text('Acceder al Centro de Control', style: TextStyle(fontSize: 16)),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text('Hint: admin/admin123, operator/op123, viewer/view123', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text('Credenciales: admin/admin123, operator/op123, viewer/view123', style: TextStyle(fontSize: 12, color: Colors.grey)),
                   ],
                 ),
               ),

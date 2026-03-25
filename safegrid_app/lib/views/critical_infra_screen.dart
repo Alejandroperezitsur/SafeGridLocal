@@ -18,7 +18,7 @@ class CriticalInfraScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Text(
-                'Critical Infrastructure Status',
+                'Estado de Infraestructura Crítica',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -59,17 +59,17 @@ class CriticalInfraScreen extends ConsumerWidget {
                             Icon(icon, color: statusColor, size: 48),
                             const SizedBox(height: 8),
                             Text(sys.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            Text('Status: ${sys.status.toUpperCase()}', style: TextStyle(color: statusColor, fontWeight: FontWeight.bold)),
+                            Text('Estado: ${sys.status.toUpperCase()}', style: TextStyle(color: statusColor, fontWeight: FontWeight.bold)),
                             const Spacer(),
                             if(sys.dependencies.isNotEmpty)
-                              Text('Depends on: ${sys.dependencies.join(', ')}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                              Text('Depende de: ${sys.dependencies.join(', ')}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
                             const Spacer(),
                             if (sys.status != 'operational' && (user?.role == 'admin' || user?.role == 'operator'))
                               FilledButton.icon(
                                 style: FilledButton.styleFrom(backgroundColor: Colors.blue),
                                 onPressed: () => ref.read(dataRepoProvider).recoverSystem(user!.role, sys.id),
                                 icon: const Icon(Icons.build),
-                                label: const Text('Recover System'),
+                                label: const Text('Recuperar Sistema'),
                               )
                           ],
                         ),
