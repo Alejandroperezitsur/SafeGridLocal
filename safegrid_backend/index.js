@@ -129,4 +129,4 @@ app.post('/api/respond/recover', (req, res) => {
 });
 
 const PORT = 3000;
-app.listen(PORT, () => console.log(`SafeGrid Engine V3 running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`SafeGrid Engine V3 running on port ${PORT} across all interfaces`));
