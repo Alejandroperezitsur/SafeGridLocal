@@ -14,13 +14,16 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _ipController = TextEditingController(text: '127.0.0.1');
+  final _ipController = TextEditingController(); // Dejar vacío para que el usuario escriba su IP
   bool _isLoading = false;
 
   Future<void> _login() async {
     setState(() => _isLoading = true);
     try {
-      ApiClient.setServerIp(_ipController.text);
+      String serverIp = _ipController.text.trim();
+      if (serverIp.isEmpty) serverIp = '127.0.0.1'; // Localhost fallback
+      ApiClient.setServerIp(serverIp);
+      
       final user = await ref.read(authRepoProvider).login(
             _usernameController.text,
             _passwordController.text,
