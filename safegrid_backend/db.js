@@ -25,6 +25,7 @@ db.serialize(() => {
   
   // If table exists but no explanation column, try to alter (SQLite fallback)
   db.run(`ALTER TABLE incidents ADD COLUMN explanation TEXT`, (err) => { /* ignore if exists */ });
+  db.run(`ALTER TABLE devices ADD COLUMN isIsolated INTEGER DEFAULT 0`, (err) => { /* ignore */ });
   
   db.run(`CREATE TABLE IF NOT EXISTS incident_events (
     id TEXT PRIMARY KEY,
