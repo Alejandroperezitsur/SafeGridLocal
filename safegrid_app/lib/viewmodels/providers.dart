@@ -52,7 +52,12 @@ final isNewUserProvider = StateProvider<bool>((ref) => true);
 final insightsProvider = Provider<List<Insight>>((ref) {
   final incidents = ref.watch(incidentsProvider).value ?? [];
   final devices = ref.watch(devicesProvider).value ?? [];
+  final systems = ref.watch(systemsProvider).value ?? [];
+  
   final hasActiveRansomware = incidents.any((i) => i.type == 'ransomware' && i.status == 'active');
+  final isSystemDown = systems.any((s) => s.status != 'operational');
+  final hasIsolated = devices.any((d) => d.isIsolated);
+  final allResolved = incidents.isNotEmpty && incidents.every((i) => i.status == 'resolved' || i.status == 'contained');
   
   List<Insight> list = [];
   
@@ -60,18 +65,40 @@ final insightsProvider = Provider<List<Insight>>((ref) {
     list.add(Insight(
       id: 'ins_ransom',
       type: 'critical',
-      title: 'Propagación en Curso',
-      message: 'El ransomware está infectando la red OT. Usa la pestaña "Red" para aislar dispositivos inmediatamente.',
+      title: 'Paso 1: Contención en Red (Aislamiento)',
+      message: 'El ransomware está infectando la red OT. Usa la pestaña "Red / Purdue" y presiona "AISLAR" en los dispositivos comprometidos para detener la propagación.',
+    ));
+    list.add(Insight(
+      id: 'ins_segregation',
+      type: 'warning',
+      title: 'Aislamiento de Redes (IT vs OT)',
+      message: '💡 Nota Educativa: ¿Por qué IT y DMZ no se infectaron? Una arquitectura segura divide la red en zonas. El atacante entró a OT, pero no pudo saltar a IT gracias a los firewalls perimetrales de la DMZ.',
+    ));
+  }
+  
+  if (hasIsolated && isSystemDown) {
+    list.add(Insight(
+      id: 'ins_recover',
+      type: 'tip',
+      title: 'Paso 2: Recuperación Física',
+      message: 'Has contenido la amenaza en la red. Ahora ve a la pestaña "Infraestructura" y presiona "RECUPERAR" para reiniciar los procesos físicos (Energía/Agua).',
+    ));
+  } else if (hasIsolated && !isSystemDown && allResolved) {
+    list.add(Insight(
+      id: 'ins_reconnect',
+      type: 'tip',
+      title: 'Paso 3: Retorno a Operaciones',
+      message: 'El incidente está resuelto y la planta opera normalmente. Ve a la pestaña "Red" y presiona "RECONECTAR" en los equipos aislados para dejarlos en verde.',
     ));
   }
   
   final unknownDevices = devices.where((d) => !d.isTrusted).length;
-  if (unknownDevices > 0) {
+  if (unknownDevices > 0 && !hasActiveRansomware) {
     list.add(Insight(
       id: 'ins_unknown',
       type: 'warning',
-      title: 'Dispositivos No Confiables',
-      message: 'Se detectaron $unknownDevices dispositivos desconocidos. Esto podría ser el inicio de un movimiento lateral.',
+      title: 'Dispositivos No Confiables (Riesgo de Movimiento Lateral)',
+      message: 'Se detectaron $unknownDevices dispositivos desconocidos.\n💡 "Movimiento Lateral" es cuando un atacante usa un equipo infectado para saltar a otros dentro de la misma red.',
     ));
   }
 
@@ -80,7 +107,7 @@ final insightsProvider = Provider<List<Insight>>((ref) {
       id: 'ins_idle',
       type: 'tip',
       title: 'Estado Seguro',
-      message: 'Todo parece en orden. Tip: Revisa periódicamente el puntaje de riesgo para detectar anomalías silenciosas.',
+      message: 'Todo en verde. Tip: Usa el botón "Iniciar Simulación" para ver cómo un ciberataque causa un colapso físico, y aprende a detenerlo.',
     ));
   }
   

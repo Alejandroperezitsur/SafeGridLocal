@@ -142,8 +142,8 @@ function isolateDevice(db, deviceId) {
 }
 
 function reconnectDevice(db, deviceId) {
-  db.run(`UPDATE devices SET isIsolated = 0, status = 'online' WHERE id = ?`, [deviceId]);
-  if(correlationState.ransomwareId) addTimelineEvent(db, correlationState.ransomwareId, `ACCIÓN SOC: Dispositivo ${deviceId} reconectado a la red`, deviceId);
+  db.run(`UPDATE devices SET isIsolated = 0, status = 'online', isTrusted = 1 WHERE id = ?`, [deviceId]);
+  if(correlationState.ransomwareId) addTimelineEvent(db, correlationState.ransomwareId, `ACCIÓN SOC: Dispositivo ${deviceId} reconectado a la red y marcado como confiable`, deviceId);
 }
 
 function shutdownZone(db, zone) {
@@ -162,6 +162,8 @@ function recoverSystem(db, systemId) {
     addTimelineEvent(db, correlationState.ransomwareId, `RECUPERACIÓN: Sistema ${systemId} restaurado a su estado operativo`);
     // Auto-resolve incident upon full recovery check (simplification)
     db.run(`UPDATE incidents SET status = 'resolved' WHERE id = ?`, [correlationState.ransomwareId]);
+    // Clear residual security events so Risk Score drops back to 0
+    db.run(`DELETE FROM security_events`);
   }
 }
 
