@@ -248,7 +248,7 @@ class _AnimatedAlertIconState extends State<_AnimatedAlertIcon> with SingleTicke
   @override
   void dispose() {
     _controller.dispose();
-    super.initState();
+    super.dispose();
   }
   @override
   Widget build(BuildContext context) {

@@ -15,7 +15,7 @@ function createIncident(db, type, severity, description) {
   const id = generateId();
   db.run(`INSERT INTO incidents (id, type, severity, status, startedAt, affectedDevices, affectedSystems, explanation) VALUES (?,?,?,?,?,?,?,?)`,
     [id, type, severity, 'active', getTimestamp(), '[]', '[]', '']);
-  addTimelineEvent(db, id, 'Incident created: ' + description);
+  addTimelineEvent(db, id, 'Incidente creado: ' + description);
   return id;
 }
 
@@ -34,9 +34,9 @@ const correlationState = {
 
 function checkCorrelations(db) {
   if (correlationState.recentFailedLogins && correlationState.recentUnknownDevice && !correlationState.intrusionIncidentId) {
-    const incId = createIncident(db, 'intrusion_attempt', 'high', 'Correlated intrusion attempt detected');
+    const incId = createIncident(db, 'intrusion_attempt', 'high', 'Intento de intrusión correlacionado detectado');
     correlationState.intrusionIncidentId = incId;
-    addTimelineEvent(db, incId, 'Correlated: Multiple failed logins + Unknown Device');
+    addTimelineEvent(db, incId, 'Correlación: Múltiples inicios de sesión fallidos + Dispositivo desconocido');
   }
 }
 
@@ -47,9 +47,9 @@ function checkFailedLogins(db, username) {
     else db.run(`UPDATE login_attempts SET attempts = ?, lastAttempt = ? WHERE username = ?`, [attempts, getTimestamp(), username]);
     
     if (attempts >= 5) {
-      addEvent(db, 'Brute Force', 'high', `Failed login attempts for user ${username}`);
+      addEvent(db, 'Brute Force', 'high', `Intentos de inicio de sesión fallidos para el usuario ${username}`);
       correlationState.recentFailedLogins = true;
-      if (correlationState.intrusionIncidentId) addTimelineEvent(db, correlationState.intrusionIncidentId, 'Continued brute force login detected');
+      if (correlationState.intrusionIncidentId) addTimelineEvent(db, correlationState.intrusionIncidentId, 'Intento de fuerza bruta continuo detectado');
       else checkCorrelations(db);
     }
   });
@@ -57,9 +57,9 @@ function checkFailedLogins(db, username) {
 
 function processUnknownDevice(db, device) {
   if (!device.isTrusted) {
-    addEvent(db, 'Unknown Device', 'medium', `Unknown device ${device.name} connected to ${device.zone}`);
+    addEvent(db, 'Unknown Device', 'medium', `Dispositivo desconocido ${device.name} conectado a la zona ${device.zone}`);
     correlationState.recentUnknownDevice = true;
-    if (correlationState.intrusionIncidentId) addTimelineEvent(db, correlationState.intrusionIncidentId, `Unknown device ${device.name} activity`, device.id);
+    if (correlationState.intrusionIncidentId) addTimelineEvent(db, correlationState.intrusionIncidentId, `Actividad del dispositivo desconocido ${device.name}`, device.id);
     else checkCorrelations(db);
   }
 }
@@ -81,8 +81,8 @@ function evaluateSystemDependencies(db) {
         statusMap[sysName] = 'down';
         
         if (correlationState.ransomwareId) {
-           addTimelineEvent(db, correlationState.ransomwareId, `Cascading Failure: ${sysName} went down due to dependencies`);
-           const explanation = `The ${sysName} system went down because it depends on one of: [${dependencies.join(', ')}], which was compromised by Ransomware propagation from the OT network.`;
+           addTimelineEvent(db, correlationState.ransomwareId, `Falla en Cascada: ${sysName} colapsó debido a dependencias afectadas`);
+           const explanation = `El sistema ${sysName} colapsó porque depende de: [${dependencies.join(', ')}], el cual fue comprometido por la propagación de Ransomware desde la red OT.`;
            db.run(`UPDATE incidents SET explanation = ? WHERE id = ?`, [explanation, correlationState.ransomwareId]);
         }
         return true; 
@@ -107,9 +107,9 @@ function updateSystemStatusFromDevices(db) {
 
 // ---------------- RANSOMWARE PROPAGATION V3 ----------------
 function propagateRansomware(db) {
-  const incId = createIncident(db, 'ransomware', 'critical', 'Ransomware propagation detected on OT');
+  const incId = createIncident(db, 'ransomware', 'critical', 'Propagación de Ransomware detectada en la red OT');
   correlationState.ransomwareId = incId;
-  addTimelineEvent(db, incId, 'Initial ransomware payload execution detected');
+  addTimelineEvent(db, incId, 'Ejecución inicial del payload de ransomware detectada');
 
   db.all(`SELECT id, name, zone FROM devices WHERE zone = 'OT'`, (err, rows) => {
     if(err || !rows) return;
@@ -120,12 +120,12 @@ function propagateRansomware(db) {
           // Verify isolation state before infecting!
           db.get(`SELECT isIsolated FROM devices WHERE id = ?`, [r.id], (err, currentDev) => {
             if (currentDev && currentDev.isIsolated === 1) {
-               addTimelineEvent(db, incId, `Infection blocked: Device ${r.name} is isolated from network`, r.id);
+               addTimelineEvent(db, incId, `Infección bloqueada: El dispositivo ${r.name} está aislado de la red`, r.id);
                return; // STOP
             }
             db.run(`UPDATE devices SET status = 'compromised', isTrusted = 0 WHERE id = ?`, [r.id], () => {
-               addTimelineEvent(db, incId, `Device ${r.name} infected and encrypted by ransomware`, r.id);
-               addEvent(db, 'Ransomware spread', 'high', `${r.name} compromised`);
+               addTimelineEvent(db, incId, `Dispositivo ${r.name} infectado y encriptado por ransomware`, r.id);
+               addEvent(db, 'Ransomware spread', 'high', `${r.name} comprometido`);
                updateSystemStatusFromDevices(db);
             });
           });
@@ -138,28 +138,28 @@ function propagateRansomware(db) {
 // ---------------- RESPONSE ACTIONS V3 ----------------
 function isolateDevice(db, deviceId) {
   db.run(`UPDATE devices SET isIsolated = 1, status = 'offline' WHERE id = ?`, [deviceId]);
-  if(correlationState.ransomwareId) addTimelineEvent(db, correlationState.ransomwareId, `SOC ACTION: Device ${deviceId} isolated from network`, deviceId);
+  if(correlationState.ransomwareId) addTimelineEvent(db, correlationState.ransomwareId, `ACCIÓN SOC: Dispositivo ${deviceId} aislado de la red`, deviceId);
 }
 
 function reconnectDevice(db, deviceId) {
   db.run(`UPDATE devices SET isIsolated = 0, status = 'online' WHERE id = ?`, [deviceId]);
-  if(correlationState.ransomwareId) addTimelineEvent(db, correlationState.ransomwareId, `SOC ACTION: Device ${deviceId} reconnected to network`, deviceId);
+  if(correlationState.ransomwareId) addTimelineEvent(db, correlationState.ransomwareId, `ACCIÓN SOC: Dispositivo ${deviceId} reconectado a la red`, deviceId);
 }
 
 function shutdownZone(db, zone) {
   db.run(`UPDATE devices SET status = 'offline', isIsolated = 1 WHERE zone = ?`, [zone]);
-  if(correlationState.ransomwareId) addTimelineEvent(db, correlationState.ransomwareId, `SOC ACTION: Emergency shutdown executed for zone ${zone}`);
+  if(correlationState.ransomwareId) addTimelineEvent(db, correlationState.ransomwareId, `ACCIÓN SOC: Apagado de emergencia ejecutado para la zona ${zone}`);
 }
 
 function containIncident(db, incidentId) {
   db.run(`UPDATE incidents SET status = 'contained' WHERE id = ?`, [incidentId]);
-  addTimelineEvent(db, incidentId, `SOC ACTION: Incident marked as CONTAINED by responder`);
+  addTimelineEvent(db, incidentId, `ACCIÓN SOC: Incidente marcado como CONTENIDO por el operador`);
 }
 
 function recoverSystem(db, systemId) {
   db.run(`UPDATE critical_systems SET status = 'operational' WHERE id = ?`, [systemId]);
   if(correlationState.ransomwareId) {
-    addTimelineEvent(db, correlationState.ransomwareId, `RECOVERY: System ${systemId} restored to operational state`);
+    addTimelineEvent(db, correlationState.ransomwareId, `RECUPERACIÓN: Sistema ${systemId} restaurado a su estado operativo`);
     // Auto-resolve incident upon full recovery check (simplification)
     db.run(`UPDATE incidents SET status = 'resolved' WHERE id = ?`, [correlationState.ransomwareId]);
   }

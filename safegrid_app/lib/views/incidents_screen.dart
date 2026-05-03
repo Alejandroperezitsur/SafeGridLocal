@@ -82,7 +82,7 @@ class IncidentsScreen extends ConsumerWidget {
                   initiallyExpanded: !isResolved,
                   leading: Icon(isResolved ? Icons.check_circle : Icons.warning_rounded, color: isResolved ? Colors.green : severityColor, size: 36),
                   title: Text(isResolved ? 'Incidente Resuelto' : 'Hay un ataque activo en la red (${inc.type})', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isResolved ? Colors.green : null)),
-                  subtitle: Text('Estado: ${inc.status.toUpperCase()} | Severidad: ${inc.severity.toUpperCase()}'),
+                  subtitle: Text('Estado: ${inc.status == 'active' ? 'ACTIVO' : inc.status.toUpperCase()} | Severidad: ${inc.severity == 'critical' ? 'CRÍTICA' : inc.severity == 'high' ? 'ALTA' : inc.severity.toUpperCase()}'),
                   children: [
                      _buildIncidentDetail(context, ref, user, inc, isResolved, severityColor),
                   ],
@@ -174,10 +174,10 @@ class IncidentsScreen extends ConsumerWidget {
               Text('Recomendación SOC (NIST):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.orange)),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Text(
             inc.type == 'ransomware' 
-              ? 'Aislar el segmento OT y deshabilitar servicios SMB temporalmente.' 
+              ? '1. Usa la pestaña "Red / Purdue" para ubicar los PLCs en riesgo.\n2. Presiona "AISLAR" en los equipos afectados para cortar su conexión.\n\n💡 Nota Educativa: El ransomware se propaga usando protocolos de red como SMB (Server Message Block, usado para compartir archivos). Al hacer clic en "Aislar", simulamos la deshabilitación del puerto en el switch de red, deteniendo la infección en seco.'
               : 'Verificar logs del Active Directory y rotar credenciales del operario afectado.',
             style: const TextStyle(fontSize: 12),
           ),
