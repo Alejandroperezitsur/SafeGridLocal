@@ -96,7 +96,7 @@ function evaluateSystemDependencies(db) {
 }
 
 function updateSystemStatusFromDevices(db) {
-  db.all(`SELECT count(*) as compCount FROM devices WHERE zone = 'OT' AND status = 'compromised'`, (err, row) => {
+  db.get(`SELECT count(*) as compCount FROM devices WHERE zone = 'OT' AND status = 'compromised'`, (err, row) => {
     if (row && row.compCount > 0) {
       db.run(`UPDATE critical_systems SET status = 'down' WHERE name = 'Energy Grid'`, () => {
          evaluateSystemDependencies(db);
