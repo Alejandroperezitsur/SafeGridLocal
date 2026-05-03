@@ -30,21 +30,21 @@ class NetworkMapScreen extends ConsumerWidget {
                     children: [
                       _buildPurdueZone(
                         context, ref, user, 
-                        'Nivel 4/5: Red Corp (IT)', 
+                        'Zona IT (Red corporativa y oficinas)', 
                         Colors.blue, 'IT', itDevices,
                         'Zona Administrativa (Enterprise Zone).',
                         'Es como el lobby y las oficinas de un edificio: donde entra la gente y se gestiona el negocio.'
                       ),
                       _buildPurdueZone(
                         context, ref, user, 
-                        'Nivel 3.5: DMZ', 
+                        'Zona DMZ (Control de aduana entre IT y OT)', 
                         Colors.orange, 'DMZ', dmzDevices,
                         'Zona Desmilitarizada (DMZ) Industrial.',
                         'Es como una aduana: un punto de control donde se revisa todo lo que entra y sale entre la oficina y la fábrica.'
                       ),
                       _buildPurdueZone(
                         context, ref, user, 
-                        'Nivel 1-3: Control (OT)', 
+                        'Zona OT (Sistemas industriales críticos)', 
                         Colors.purple, 'OT', otDevices,
                         'Zona de Operaciones (Manufacturing Zone). Controla los procesos físicos.',
                         'Es el taller o la planta de producción: donde están las máquinas reales trabajando.',
@@ -70,10 +70,10 @@ class NetworkMapScreen extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _legendDot(Colors.green, 'Operativo'),
-          _legendDot(Colors.orange, 'Sospechoso'),
-          _legendDot(Colors.red, 'COMPROMETIDO'),
-          _legendDot(Colors.grey, 'AISLADO'),
+          _legendDot(Colors.green, 'Todo bien'),
+          _legendDot(Colors.orange, 'Riesgo'),
+          _legendDot(Colors.red, 'Ataque'),
+          _legendDot(Colors.grey, 'Aislado'),
         ],
       ),
     );

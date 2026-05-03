@@ -80,13 +80,19 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         actions: [
           Row(
             children: [
-              const Icon(Icons.school, size: 16, color: Colors.blueAccent),
-              const SizedBox(width: 4),
-              const Text('Modo Aprendizaje', style: TextStyle(fontSize: 10)),
-              Switch(
-                value: isLearningMode,
-                onChanged: (val) => ref.read(learningModeProvider.notifier).state = val,
-                activeColor: Colors.blueAccent,
+              TextButton.icon(
+                icon: const Icon(Icons.psychology, color: Colors.blueAccent),
+                label: const Text('Explicación simple', style: TextStyle(color: Colors.blueAccent)),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('💡 Explicación simple'),
+                      content: const Text('Un ransomware es un virus que bloquea sistemas y exige un rescate. Aquí estamos simulando cómo se propaga desde las computadoras (IT) hasta las máquinas físicas de la fábrica (OT).'),
+                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido'))],
+                    )
+                  );
+                },
               ),
             ],
           ),
@@ -133,8 +139,19 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
           const TutorialOverlay(),
         ],
       ),
+      floatingActionButton: isDesktop ? null : FloatingActionButton.extended(
+        onPressed: () async {
+          final user = ref.read(currentUserProvider);
+          if (user != null && user.role == 'admin') {
+            await ref.read(dataRepoProvider).simulateAttack(user.role);
+          }
+        },
+        backgroundColor: Colors.redAccent,
+        icon: const Icon(Icons.warning_amber),
+        label: const Text('Simular ataque'),
+      ),
       bottomNavigationBar: isDesktop ? null : BottomNavigationBar(
-        currentIndex: _currentIndex,
+        currentIndex: _currentIndex > 2 ? 0 : _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
         backgroundColor: const Color(0xFF0F2537),
@@ -142,7 +159,6 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
           BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
           BottomNavigationBarItem(icon: Icon(Icons.account_tree), label: 'Red'),
           BottomNavigationBarItem(icon: Icon(Icons.security), label: 'Incidentes'),
-          BottomNavigationBarItem(icon: Icon(Icons.factory), label: 'Infra.'),
         ],
       ),
     );

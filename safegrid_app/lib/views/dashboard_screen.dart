@@ -41,50 +41,101 @@ class DashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      Text(
-                        'Visión General',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const Text('Centro de Monitoreo de Inteligencia Local', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      const Icon(Icons.shield, color: Colors.blueAccent, size: 36),
+                      const SizedBox(width: 12),
+                      Text('SafeGrid Local', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  if (user?.role == 'admin')
-                    Row(
+                  const Text('Simulador de ciberseguridad para infraestructuras críticas', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  const Text('💡 Este sistema simula cómo un ciberataque puede afectar servicios como energía o agua, y cómo puedes detenerlo.', style: TextStyle(color: Colors.lightBlueAccent, fontSize: 14, fontStyle: FontStyle.italic)),
+                  const SizedBox(height: 24),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: activeIncidents.isEmpty ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                      border: Border.all(color: activeIncidents.isEmpty ? Colors.green : Colors.red, width: 2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        FilledButton.icon(
-                          style: FilledButton.styleFrom(backgroundColor: Colors.redAccent, minimumSize: const Size(100, 48)),
-                          onPressed: () async {
-                            await ref.read(dataRepoProvider).simulateAttack(user!.role);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Simulación de Ransomware iniciada...'), backgroundColor: Colors.red),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.warning_amber),
-                          label: const Text('Simular Ransomware'),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.my_location, color: activeIncidents.isEmpty ? Colors.green : Colors.red),
+                                const SizedBox(width: 8),
+                                Text('¿Qué está pasando ahora?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: activeIncidents.isEmpty ? Colors.green : Colors.red)),
+                              ]
+                            ),
+                            if (user?.role == 'admin')
+                              IconButton.filledTonal(
+                                tooltip: 'Reiniciar todo el sistema',
+                                onPressed: () async {
+                                  await ref.read(dataRepoProvider).resetSimulation(user!.role);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sistema restaurado a la normalidad.'), backgroundColor: Colors.green));
+                                  }
+                                },
+                                icon: const Icon(Icons.refresh),
+                              ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        IconButton.filledTonal(
-                          style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
-                          onPressed: () async {
-                            await ref.read(dataRepoProvider).resetSimulation(user!.role);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Simulación reiniciada. Estado limpio.'), backgroundColor: Colors.green),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.refresh),
+                        const SizedBox(height: 12),
+                        Text(activeIncidents.isEmpty 
+                          ? 'No hay amenazas activas. El sistema está funcionando normalmente.' 
+                          : 'Se está propagando un ransomware en la red OT. Se recomienda actuar.',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)
                         ),
-                      ],
+                        if (activeIncidents.isNotEmpty) ...[
+                           const SizedBox(height: 24),
+                           const Text('👉 Acción recomendada:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                           const SizedBox(height: 12),
+                           Wrap(
+                             spacing: 12,
+                             runSpacing: 12,
+                             children: [
+                               ElevatedButton.icon(
+                                 onPressed: () {
+                                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Por favor, selecciona la pestaña "Red / Purdue" en el menú para continuar.')));
+                                 },
+                                 icon: const Icon(Icons.account_tree),
+                                 label: const Text('Ir al mapa de red'),
+                                 style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+                               ),
+                               ElevatedButton.icon(
+                                 onPressed: () {
+                                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ve al Mapa de Red y presiona "AISLAR" en los dispositivos comprometidos.')));
+                                 },
+                                 icon: const Icon(Icons.security),
+                                 label: const Text('Aislar dispositivo sospechoso'),
+                                 style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+                               ),
+                             ]
+                           )
+                        ],
+                        if (activeIncidents.isEmpty && user?.role == 'admin') ...[
+                           const SizedBox(height: 24),
+                           ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16)),
+                              onPressed: () async {
+                                await ref.read(dataRepoProvider).simulateAttack(user!.role);
+                              },
+                              icon: const Icon(Icons.play_arrow, size: 24),
+                              label: const Text('Iniciar simulación (Demo)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                           )
+                        ]
+                      ]
                     )
+                  )
                 ],
               ),
               const SizedBox(height: 24),
@@ -109,10 +160,7 @@ class DashboardScreen extends ConsumerWidget {
                       );
                 }
               ),
-              if (activeIncidents.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                _buildRecommendations(context, ref, user, activeIncidents),
-              ],
+              // Replaced by Hero Header actions
             ],
           ),
         ),

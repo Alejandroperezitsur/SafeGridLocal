@@ -19,8 +19,8 @@ class IncidentsScreen extends ConsumerWidget {
             children: [
               const Icon(Icons.verified_user, size: 60, color: Colors.green),
               const SizedBox(height: 16),
-              const Text('Sistema Seguro', style: TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold)),
-              const Text('No se detectan amenazas correlacionadas.', style: TextStyle(color: Colors.grey)),
+              const Text('No hay incidentes activos.', style: TextStyle(color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('Puedes iniciar una simulación para ver cómo funciona el sistema.', style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 24),
               ExplainWrapper(
                 title: 'Monitoreo Pasivo',
@@ -68,7 +68,7 @@ class IncidentsScreen extends ConsumerWidget {
                 child: ExpansionTile(
                   initiallyExpanded: !isResolved,
                   leading: Icon(isResolved ? Icons.check_circle : Icons.warning_rounded, color: isResolved ? Colors.green : severityColor, size: 36),
-                  title: Text('INCIDENTE: ${inc.type.toUpperCase()}', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isResolved ? Colors.green : null)),
+                  title: Text(isResolved ? 'Incidente Resuelto' : 'Hay un ataque activo en la red (${inc.type})', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isResolved ? Colors.green : null)),
                   subtitle: Text('Estado: ${inc.status.toUpperCase()} | Severidad: ${inc.severity.toUpperCase()}'),
                   children: [
                      _buildIncidentDetail(context, ref, user, inc, isResolved, severityColor),

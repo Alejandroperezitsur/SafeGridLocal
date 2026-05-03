@@ -1,0 +1,104 @@
+Infraestructuras Críticas e Industriales
+La protección de sistemas esenciales que sostienen la seguridad nacional, la economía y el bienestar social
+1
+
+¿Qué son las Infraestructuras Críticas?
+Elementos o sistemas esenciales para el mantenimiento de funciones sociales vitales, la salud, la integridad física, la seguridad y el bienestar de la población.
+Su perturbación o destrucción no permite soluciones alternativas y tendría un grave impacto en la sociedad.
+2
+
+El Desafío de la Convergencia IT/OT
+Convergencia IT/OT
+La unión de tecnologías de información con sistemas operativos amplía la superficie de ataque
+Dispositivos IoT
+Miles de dispositivos conectados aumentan las vulnerabilidades en entornos industriales
+Impacto Crítico
+Interrupciones generan pérdidas económicas y paralizan servicios vitales
+3
+
+70% de Ciberataques Afectan Infraestructuras Críticas
+70%
+Ataques a Infraestructuras
+La mayoría de ciberataques actuales impactan sistemas críticos
+30%
+Riesgo Antes de 2025
+Organizaciones enfrentarán ataque grave en infraestructuras críticas
+La protección de sistemas OT es fundamental para mantener la seguridad física de las personas y la continuidad operativa.
+4
+
+Marco NIST: Cinco Funciones del Núcleo
+Actividades simultáneas y continuas que forman una cultura operativa para abordar el riesgo dinámico
+Identificar
+Comprender el riesgo en sistemas, personas, activos y capacidades
+Proteger
+Implementar medidas para garantizar entrega de servicios críticos
+Detectar
+Vigilancia continua para identificar eventos de seguridad
+Responder
+Acciones para mitigar impacto de incidentes detectados
+Recuperar
+Planes de resiliencia para restaurar servicios dañados
+5
+
+Estándares de Cumplimiento
+ISA 62443
+Estándar para ciberseguridad en sistemas de automatización industrial
+ISA 62443-2-1: Programa de seguridad para sistemas de control
+ISA 62443-3-3: Requisitos de seguridad del sistema
+Segmentación de redes y controles de acceso
+ISO/IEC 27001
+Sistema de gestión de seguridad de la información
+Marco de gestión de riesgos
+Confidencialidad, integridad y disponibilidad
+Controles como A.10.8.3 para datos en tránsito
+6
+
+Perfiles del Marco: Perfil Actual vs Perfil Objetivo
+Perfil Actual
+Describe la postura de ciberseguridad presente
+Identificación de logros actuales
+Información de referencia para evaluación
+Línea base precisa de seguridad
+Perfil Objetivo
+Define resultados necesarios para objetivos de gestión de riesgos
+Enfoque en categorías vitales
+Considera requisitos externos
+Integración en ciclo de vida
+La comparación revela brechas y permite crear un plan de acción priorizado para cumplir objetivos de seguridad.
+7
+
+Modelo Purdue: Segmentación de Red
+01
+Segmentación Técnica
+Topología de red con varios niveles según necesidad de protección
+02
+Separación IT/OT
+Barrera lógica entre red corporativa y red de control industrial
+03
+Seguridad de ICS
+Restringe acceso lógico y físico a áreas críticas
+8
+
+Gobernanza y Resiliencia Institucional
+Nivel Ejecutivo Superior
+Prioridades de misión, recursos disponibles y tolerancia al riesgo
+Nivel Empresarial/Proceso
+Desarrollo de perfiles, evaluaciones de impacto y asignación de presupuesto
+Nivel Implementación/Operaciones
+Ejecución técnica, comunicación de progreso y cambios observados
+Planificación de Respuesta (RS.RP)
+Procesos inmediatos para contener impacto durante o después de incidente
+Planificación de Recuperación (RC.RP)
+Restauración de capacidades dañadas con retorno oportuno a operaciones normales
+9
+
+Mejora Continua: Ciclo de Siete Pasos
+Priorización y Alcance
+Orientación
+Crear Perfil Actual
+Evaluación de Riesgos
+Crear Perfil Objetivo
+Determinar Brechas
+Implementar Plan
+Proceso iterativo que asegura adaptabilidad y evolución ante amenazas cada vez más sofisticadas.
+10
