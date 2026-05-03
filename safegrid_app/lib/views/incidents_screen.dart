@@ -26,16 +26,29 @@ class IncidentsScreen extends ConsumerWidget {
                 title: 'Monitoreo Pasivo',
                 techDesc: 'El sistema escucha el tráfico de red buscando anomalías sin interrumpir el proceso industrial.',
                 analogyDesc: 'Es como un guardia que observa las cámaras sin detener a nadie, a menos que vea algo prohibido.',
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.blue.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.blue),
-                      SizedBox(width: 8),
-                      Text('¿Cómo funciona el monitoreo?', style: TextStyle(color: Colors.blue, fontSize: 12, decoration: TextDecoration.underline)),
-                    ],
+                child: InkWell(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Row(children: [Icon(Icons.monitor_heart, color: Colors.blue), SizedBox(width:8), Text('Monitoreo Pasivo (SOC)')]),
+                        content: const Text('En infraestructuras críticas (OT), no podemos instalar antivirus normales porque podrían ralentizar o detener una máquina industrial.\n\nPor eso usamos "Monitoreo Pasivo": el sistema escucha el tráfico de red de forma invisible usando un puerto espejo (SPAN port). Así detectamos anomalías sin tocar los PLCs.'),
+                        actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: const Text('Entendido'))]
+                      )
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.blue.withOpacity(0.05), borderRadius: BorderRadius.circular(8)),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.info_outline, size: 16, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text('¿Cómo funciona el monitoreo?', style: TextStyle(color: Colors.blue, fontSize: 12, decoration: TextDecoration.underline, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                   ),
                 ),
               ),

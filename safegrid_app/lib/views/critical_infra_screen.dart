@@ -55,37 +55,58 @@ class CriticalInfraScreen extends ConsumerWidget {
                         title: sys.name,
                         techDesc: '${sys.name} es un activo crítico que depende de la red OT. Estado: ${sys.status}.',
                         analogyDesc: _getSystemAnalogy(sys.name),
-                        child: Card(
-                          color: statusColor.withOpacity(0.05),
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(color: statusColor, width: 2),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(icon, color: statusColor, size: 40),
-                                const SizedBox(height: 8),
-                                Text(sys.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                                const SizedBox(height: 4),
-                                Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 11)),
-                                const Spacer(),
-                                if (sys.status != 'operational')
-                                   _buildCausalityNote(sys),
-                                const Spacer(),
-                                if (sys.status != 'operational' && user?.role != 'viewer')
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, minimumSize: const Size(0, 44)),
-                                      onPressed: () => ref.read(dataRepoProvider).recoverSystem(user!.role, sys.id),
-                                      icon: const Icon(Icons.build_circle, size: 16),
-                                      label: const Text('RECUPERAR', style: TextStyle(fontSize: 11)),
+                        child: InkWell(
+                          onTap: () => _showSystemDetailsDialog(context, sys),
+                          borderRadius: BorderRadius.circular(16),
+                          child: Card(
+                            color: statusColor.withOpacity(0.05),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              side: BorderSide(color: statusColor, width: 2),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(icon, color: statusColor, size: 40),
+                                  const SizedBox(height: 8),
+                                  Text(sys.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                                  const SizedBox(height: 4),
+                                  Text(statusText, style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 11)),
+                                  const Spacer(),
+                                  if (sys.status == 'operational') ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.green)),
+                                          SizedBox(width: 8),
+                                          Text('Telemetría nominal', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
                                     ),
-                                  )
-                              ],
+                                    const SizedBox(height: 8),
+                                    Text(sys.name.contains('Water') ? 'Flujo de agua constante: 450 L/s' : 'Frecuencia de red: 60.01 Hz', style: const TextStyle(fontSize: 10, color: Colors.grey, fontStyle: FontStyle.italic)),
+                                  ],
+                                  if (sys.status != 'operational')
+                                     _buildCausalityNote(sys),
+                                  const Spacer(),
+                                  if (sys.status != 'operational' && user?.role != 'viewer')
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, minimumSize: const Size(0, 44)),
+                                        onPressed: () => ref.read(dataRepoProvider).recoverSystem(user!.role, sys.id),
+                                        icon: const Icon(Icons.build_circle, size: 16),
+                                        label: const Text('RECUPERAR', style: TextStyle(fontSize: 11)),
+                                      ),
+                                    )
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -101,6 +122,38 @@ class CriticalInfraScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
+      ),
+    );
+  }
+
+  void _showSystemDetailsDialog(BuildContext context, dynamic sys) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.domain, color: Colors.blueAccent),
+            const SizedBox(width: 8),
+            Text('Diagnóstico: ${sys.name}', style: const TextStyle(fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Estado Operativo: ${sys.status.toUpperCase()}', style: TextStyle(fontWeight: FontWeight.bold, color: sys.status == 'operational' ? Colors.green : Colors.red)),
+            const SizedBox(height: 12),
+            const Text('Dependencias de Hardware:', style: TextStyle(fontWeight: FontWeight.bold)),
+            ...(sys.dependencies as List).map((dep) => Text('• $dep (Nivel 1/2)')).toList(),
+            if ((sys.dependencies as List).isEmpty) const Text('Ninguna externa (Sistema Raíz)'),
+            const SizedBox(height: 16),
+            const Text('Análisis de Impacto (Cascada):', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('La interrupción de esta infraestructura detiene inmediatamente operaciones críticas, afectando servicios a nivel ciudad o procesos de manufactura clave.'),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+        ],
       ),
     );
   }

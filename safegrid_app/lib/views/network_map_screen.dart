@@ -127,7 +127,7 @@ class NetworkMapScreen extends ConsumerWidget {
                   itemCount: devices.length,
                   itemBuilder: (context, index) {
                     final d = devices[index];
-                    return _buildDeviceNode(ref, user, d);
+                    return _buildDeviceNode(context, ref, user, d);
                   },
                 ),
               )
@@ -138,7 +138,7 @@ class NetworkMapScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDeviceNode(WidgetRef ref, User? user, Device d) {
+  Widget _buildDeviceNode(BuildContext context, WidgetRef ref, User? user, Device d) {
     IconData icon = d.type == 'router' ? Icons.router : (d.type == 'plc' ? Icons.settings_input_component : Icons.computer);
     Color borderColor = Colors.green;
     bool isAlert = false;
@@ -162,25 +162,68 @@ class NetworkMapScreen extends ConsumerWidget {
         elevation: isAlert ? 4 : 1,
         shape: RoundedRectangleBorder(side: BorderSide(color: borderColor, width: 2), borderRadius: BorderRadius.circular(8)),
         color: borderColor.withOpacity(0.1),
-        child: ListTile(
-          visualDensity: VisualDensity.compact,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-          leading: isAlert 
-            ? _AnimatedAlertIcon(icon: icon, color: borderColor)
-            : Icon(icon, color: borderColor, size: 28),
-          title: Text(d.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          subtitle: Text(d.isIsolated ? '🚩 AISLADO' : d.status.toUpperCase(), style: const TextStyle(fontSize: 10)),
-          trailing: user?.role != 'viewer' && !d.isIsolated
-            ? SizedBox(
-                height: 32,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 4)),
-                  onPressed: () => ref.read(dataRepoProvider).isolateDevice(user!.role, d.id),
-                  child: const Text('AISLAR', style: TextStyle(fontSize: 10)),
-                ),
-              )
-            : null,
+        child: InkWell(
+          onTap: () => _showDeviceDetailsDialog(context, d),
+          child: ListTile(
+            visualDensity: VisualDensity.compact,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+            leading: isAlert 
+              ? _AnimatedAlertIcon(icon: icon, color: borderColor)
+              : Icon(icon, color: borderColor, size: 28),
+            title: Text(d.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+            subtitle: Text(d.isIsolated ? '🚩 AISLADO' : d.status.toUpperCase(), style: const TextStyle(fontSize: 10)),
+            trailing: user?.role != 'viewer'
+              ? d.isIsolated
+                ? SizedBox(
+                    height: 32,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 4)),
+                      onPressed: () => ref.read(dataRepoProvider).reconnectDevice(user!.role, d.id),
+                      child: const Text('RECONECTAR', style: TextStyle(fontSize: 10)),
+                    ),
+                  )
+                : SizedBox(
+                    height: 32,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 4)),
+                      onPressed: () => ref.read(dataRepoProvider).isolateDevice(user!.role, d.id),
+                      child: const Text('AISLAR', style: TextStyle(fontSize: 10)),
+                    ),
+                  )
+              : null,
+          ),
         ),
+      ),
+    );
+  }
+  void _showDeviceDetailsDialog(BuildContext context, Device d) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.memory, color: Colors.blueAccent),
+            const SizedBox(width: 8),
+            const Text('Detalles del Dispositivo', style: TextStyle(fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Nombre: ${d.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text('Dirección IP: ${d.ip}'),
+            Text('Tipo: ${d.type.toUpperCase()}'),
+            Text('Zona: Nivel ${d.zone == 'OT' ? '1/2' : d.zone == 'DMZ' ? '3.5' : '4/5'} (${d.zone})'),
+            const SizedBox(height: 12),
+            Text('Estado: ${d.status.toUpperCase()}', style: TextStyle(color: d.status == 'compromised' ? Colors.red : Colors.green, fontWeight: FontWeight.bold)),
+            Text('Confianza: ${d.isTrusted ? "Verificado (Whitelist)" : "Desconocido (Riesgo)"}', style: TextStyle(color: d.isTrusted ? Colors.green : Colors.orange)),
+            Text('Aislado de red: ${d.isIsolated ? "SÍ (Desconectado del Switch)" : "NO"}', style: TextStyle(color: d.isIsolated ? Colors.blue : Colors.grey)),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+        ],
       ),
     );
   }

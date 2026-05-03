@@ -141,6 +141,11 @@ function isolateDevice(db, deviceId) {
   if(correlationState.ransomwareId) addTimelineEvent(db, correlationState.ransomwareId, `SOC ACTION: Device ${deviceId} isolated from network`, deviceId);
 }
 
+function reconnectDevice(db, deviceId) {
+  db.run(`UPDATE devices SET isIsolated = 0, status = 'online' WHERE id = ?`, [deviceId]);
+  if(correlationState.ransomwareId) addTimelineEvent(db, correlationState.ransomwareId, `SOC ACTION: Device ${deviceId} reconnected to network`, deviceId);
+}
+
 function shutdownZone(db, zone) {
   db.run(`UPDATE devices SET status = 'offline', isIsolated = 1 WHERE zone = ?`, [zone]);
   if(correlationState.ransomwareId) addTimelineEvent(db, correlationState.ransomwareId, `SOC ACTION: Emergency shutdown executed for zone ${zone}`);
@@ -169,6 +174,7 @@ module.exports = {
   simulateAttack: propagateRansomware,
   correlationState,
   isolateDevice,
+  reconnectDevice,
   shutdownZone,
   containIncident,
   recoverSystem

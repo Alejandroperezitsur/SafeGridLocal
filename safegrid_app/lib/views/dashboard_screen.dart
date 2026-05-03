@@ -225,6 +225,7 @@ class DashboardScreen extends ConsumerWidget {
                 return Column(
                   children: [
                     _buildExplainableTile(
+                      context,
                       'Zona IT (Enterprise)', 
                       itComp > 0 ? 'AMENAZADA' : 'SEGURA', 
                       Icons.computer, 
@@ -233,6 +234,7 @@ class DashboardScreen extends ConsumerWidget {
                       'Es el cerebro administrativo: donde se gestionan correos y facturas.'
                     ),
                     _buildExplainableTile(
+                      context,
                       'Zona OT (Control)', 
                       otComp > 0 ? 'BAJO ATAQUE' : 'MONITOREADA', 
                       Icons.precision_manufacturing, 
@@ -252,17 +254,45 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildExplainableTile(String title, String status, IconData icon, Color color, String tech, String analogy) {
+  Widget _buildExplainableTile(BuildContext context, String title, String status, IconData icon, Color color, String tech, String analogy) {
     return ExplainWrapper(
       title: title,
       techDesc: tech,
       analogyDesc: analogy,
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(vertical: 4),
-        leading: Icon(icon, color: color, size: 40),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(status, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
-        trailing: const Icon(Icons.help_outline, size: 16, color: Colors.grey),
+      child: InkWell(
+        onTap: () {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Row(
+                children: [
+                  Icon(icon, color: color),
+                  const SizedBox(width: 8),
+                  Text(title),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Estado actual: $status', style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+                  const SizedBox(height: 12),
+                  Text('Rol Técnico:\n$tech', style: const TextStyle(fontSize: 13)),
+                  const SizedBox(height: 12),
+                  Text('Analogía:\n$analogy', style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic)),
+                ],
+              ),
+              actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido'))],
+            )
+          );
+        },
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(vertical: 4),
+          leading: Icon(icon, color: color, size: 40),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          subtitle: Text(status, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+          trailing: const Icon(Icons.touch_app, size: 16, color: Colors.blueAccent),
+        ),
       ),
     );
   }

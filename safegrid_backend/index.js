@@ -107,6 +107,13 @@ app.post('/api/respond/isolate', (req, res) => {
   res.json({ message: `Device ${deviceId} isolated` });
 });
 
+app.post('/api/respond/reconnect', (req, res) => {
+  const { deviceId, role } = req.body;
+  if(role !== 'admin' && role !== 'operator') return res.status(403).json({error: 'Unauthorized'});
+  threatEngine.reconnectDevice(db, deviceId);
+  res.json({ message: `Device ${deviceId} reconnected` });
+});
+
 app.post('/api/respond/shutdown_zone', (req, res) => {
   const { zone, role } = req.body;
   if(role !== 'admin') return res.status(403).json({error: 'Admin only'});
@@ -128,5 +135,19 @@ app.post('/api/respond/recover', (req, res) => {
   res.json({ message: `System ${systemId} recovered` });
 });
 
+// --- Auto-Reset on Boot for Clean Simulation ---
+db.serialize(() => {
+  db.run(`UPDATE devices SET status = 'online', isTrusted = 1, isIsolated = 0`);
+  db.run(`UPDATE critical_systems SET status = 'operational'`);
+  db.run(`DELETE FROM security_events`);
+  db.run(`DELETE FROM login_attempts`);
+  db.run(`DELETE FROM incidents`);
+  db.run(`DELETE FROM incident_events`);
+});
+threatEngine.correlationState.recentFailedLogins = false;
+threatEngine.correlationState.recentUnknownDevice = false;
+threatEngine.correlationState.intrusionIncidentId = null;
+threatEngine.correlationState.ransomwareId = null;
+
 const PORT = 3000;
-app.listen(PORT, '0.0.0.0', () => console.log(`SafeGrid Engine V3 running on port ${PORT} across all interfaces`));
+app.listen(PORT, '0.0.0.0', () => console.log(`SafeGrid Engine V3 running on port ${PORT} across all interfaces (Clean State)`));

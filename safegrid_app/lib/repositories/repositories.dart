@@ -52,6 +52,10 @@ class DataRepository {
   Future<void> isolateDevice(String role, String deviceId) async {
     await ApiClient.dio.post('/respond/isolate', data: {'role': role, 'deviceId': deviceId});
   }
+
+  Future<void> reconnectDevice(String role, String deviceId) async {
+    await ApiClient.dio.post('/respond/reconnect', data: {'role': role, 'deviceId': deviceId});
+  }
   
   Future<void> shutdownZone(String role, String zone) async {
     await ApiClient.dio.post('/respond/shutdown_zone', data: {'role': role, 'zone': zone});
