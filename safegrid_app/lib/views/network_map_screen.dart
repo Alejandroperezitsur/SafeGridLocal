@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:animate_do/animate_do.dart';
 import '../viewmodels/providers.dart';
 import '../models/models.dart';
+import '../core/theme.dart';
 import 'widgets/educational_widgets.dart';
 import 'widgets/screen_onboarding.dart';
 import 'widgets/onboarding_data.dart';
 
 class NetworkMapScreen extends ConsumerWidget {
   const NetworkMapScreen({super.key});
+
+  static const _zoneConfigs = [
+    _ZoneConfig('IT', 'ZONA IT', 'Red corporativa y oficinas', Icons.computer_rounded, SG.neonBlue, 'Enterprise Zone — Nivel 4/5 Purdue', 'Es como el lobby y las oficinas de un edificio.'),
+    _ZoneConfig('DMZ', 'ZONA DMZ', 'Control de aduana entre IT y OT', Icons.shield_rounded, SG.warning, 'Zona Desmilitarizada Industrial', 'Es como una aduana: revisa todo lo que entra y sale.'),
+    _ZoneConfig('OT', 'ZONA OT', 'Sistemas industriales críticos', Icons.precision_manufacturing_rounded, SG.neonPurple, 'Manufacturing Zone — Controla procesos físicos.', 'Es el taller de producción: donde están las máquinas reales.'),
+  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,68 +26,64 @@ class NetworkMapScreen extends ConsumerWidget {
       body: ScreenOnboarding(
         screenKey: 'network',
         slides: kNetworkSlides,
-        child: Column(
-        children: [
-          _buildMapLegend(context),
-          Expanded(
-            child: devicesAsync.when(
-              data: (devices) {
-                final itDevices = devices.where((d) => d.zone == 'IT').toList();
-                final dmzDevices = devices.where((d) => d.zone == 'DMZ').toList();
-                final otDevices = devices.where((d) => d.zone == 'OT').toList();
-
-                return Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildPurdueZone(
-                        context, ref, user, 
-                        'Zona IT (Red corporativa y oficinas)', 
-                        Colors.blue, 'IT', itDevices,
-                        'Zona Administrativa (Enterprise Zone).',
-                        'Es como el lobby y las oficinas de un edificio: donde entra la gente y se gestiona el negocio.'
-                      ),
-                      _buildPurdueZone(
-                        context, ref, user, 
-                        'Zona DMZ (Control de aduana entre IT y OT)', 
-                        Colors.orange, 'DMZ', dmzDevices,
-                        'Zona Desmilitarizada (DMZ) Industrial.',
-                        'Es como una aduana: un punto de control donde se revisa todo lo que entra y sale entre la oficina y la fábrica.'
-                      ),
-                      _buildPurdueZone(
-                        context, ref, user, 
-                        'Zona OT (Sistemas industriales críticos)', 
-                        Colors.purple, 'OT', otDevices,
-                        'Zona de Operaciones (Manufacturing Zone). Controla los procesos físicos.',
-                        'Es el taller o la planta de producción: donde están las máquinas reales trabajando.',
-                        hasShutdown: true,
-                      ),
-                    ],
+        child: Stack(
+          children: [
+            const ScanLinesOverlay(opacity: 0.01),
+            Column(
+              children: [
+                _buildMapLegend(),
+                Expanded(
+                  child: devicesAsync.when(
+                    data: (devices) {
+                      return Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: List.generate(_zoneConfigs.length, (i) {
+                            final config = _zoneConfigs[i];
+                            final zoneDevices = devices.where((d) => d.zone == config.id).toList();
+                            return Expanded(
+                              child: FadeInUp(
+                                delay: Duration(milliseconds: 100 * i),
+                                duration: const Duration(milliseconds: 500),
+                                child: _buildPurdueZone(context, ref, user, config, zoneDevices),
+                              ),
+                            );
+                          }),
+                        ),
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator(color: SG.cyan)),
+                    error: (err, stack) => Center(child: Text('Error: $err', style: SG.body(14, color: SG.danger))),
                   ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Error: $err')),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildMapLegend(BuildContext context) {
+  Widget _buildMapLegend() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      color: Colors.black26,
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      decoration: BoxDecoration(
+        color: SG.surface,
+        border: Border(bottom: BorderSide(color: SG.border)),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _legendDot(Colors.green, 'Todo bien'),
-          _legendDot(Colors.orange, 'Riesgo'),
-          _legendDot(Colors.red, 'Ataque'),
-          _legendDot(Colors.grey, 'Aislado'),
+          Text('MAPA TÁCTICO  ', style: SG.heading(12, color: SG.cyan)),
+          const SizedBox(width: 16),
+          _legendDot(SG.safe, 'Operativo'),
+          const SizedBox(width: 16),
+          _legendDot(SG.warning, 'Riesgo'),
+          const SizedBox(width: 16),
+          _legendDot(SG.danger, 'Comprometido'),
+          const SizedBox(width: 16),
+          _legendDot(SG.muted, 'Aislado'),
         ],
       ),
     );
@@ -87,201 +91,328 @@ class NetworkMapScreen extends ConsumerWidget {
 
   Widget _legendDot(Color color, String label) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        CircleAvatar(backgroundColor: color, radius: 6),
-        const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 10)),
+        Container(
+          width: 8, height: 8,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color,
+            boxShadow: [BoxShadow(color: color.withOpacity(0.4), blurRadius: 4)],
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: SG.mono(9, color: Colors.white54)),
       ],
     );
   }
 
-  Widget _buildPurdueZone(BuildContext context, WidgetRef ref, User? user, String title, Color color, String zoneId, List<Device> devices, String tech, String analogy, {bool hasShutdown = false}) {
-    return Expanded(
-      child: ExplainWrapper(
-        title: title,
-        techDesc: tech,
-        analogyDesc: analogy,
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.05),
-            border: Border.all(color: color.withOpacity(0.3), width: 1.5),
-            borderRadius: BorderRadius.circular(12),
+  Widget _buildPurdueZone(BuildContext context, WidgetRef ref, User? user, _ZoneConfig config, List<Device> devices) {
+    final hasCompromised = devices.any((d) => d.status == 'compromised');
+
+    return ExplainWrapper(
+      title: config.title,
+      techDesc: config.tech,
+      analogyDesc: config.analogy,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: config.color.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: hasCompromised
+                ? SG.danger.withOpacity(0.4)
+                : config.color.withOpacity(0.2),
+            width: hasCompromised ? 2 : 1,
           ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: const BorderRadius.vertical(top: Radius.circular(10))),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(child: Text(title, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 13))),
-                    if (hasShutdown && user?.role == 'admin')
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        tooltip: 'Apagado Emergencia OT',
-                        icon: const Icon(Icons.power_settings_new, color: Colors.red, size: 20),
-                        onPressed: () => ref.read(dataRepoProvider).shutdownZone(user!.role, zoneId),
-                      )
+          boxShadow: hasCompromised
+              ? [BoxShadow(color: SG.danger.withOpacity(0.1), blurRadius: 16)]
+              : null,
+        ),
+        child: Column(
+          children: [
+            // Zone header
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    config.color.withOpacity(0.15),
+                    config.color.withOpacity(0.05),
                   ],
                 ),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(13)),
+                border: Border(bottom: BorderSide(color: config.color.withOpacity(0.15))),
               ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: devices.length,
-                  itemBuilder: (context, index) {
-                    final d = devices[index];
-                    return _buildDeviceNode(context, ref, user, d);
-                  },
-                ),
-              )
-            ],
-          ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: config.color.withOpacity(0.15),
+                      border: Border.all(color: config.color.withOpacity(0.3)),
+                    ),
+                    child: Icon(config.icon, color: config.color, size: 16),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(config.title, style: SG.heading(12, color: config.color)),
+                        Text(config.subtitle, style: SG.mono(8, color: Colors.white.withOpacity(0.3))),
+                      ],
+                    ),
+                  ),
+                  if (hasCompromised)
+                    PulsingDot(color: SG.danger, size: 8),
+                  if (config.id == 'OT' && user?.role == 'admin')
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      tooltip: 'Apagado Emergencia OT',
+                      icon: Icon(Icons.power_settings_new_rounded, color: SG.danger, size: 18),
+                      onPressed: () => ref.read(dataRepoProvider).shutdownZone(user!.role, config.id),
+                    ),
+                ],
+              ),
+            ),
+            // Device list
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(8),
+                itemCount: devices.length,
+                itemBuilder: (context, index) {
+                  final d = devices[index];
+                  return _buildDeviceNode(context, ref, user, d, config.color);
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDeviceNode(BuildContext context, WidgetRef ref, User? user, Device d) {
-    IconData icon = d.type == 'router' ? Icons.router : (d.type == 'plc' ? Icons.settings_input_component : Icons.computer);
-    Color borderColor = Colors.green;
+  Widget _buildDeviceNode(BuildContext context, WidgetRef ref, User? user, Device d, Color zoneColor) {
+    IconData icon = d.type == 'router'
+        ? Icons.router_rounded
+        : (d.type == 'plc' ? Icons.settings_input_component_rounded : Icons.computer_rounded);
+    Color borderColor = SG.safe;
     bool isAlert = false;
-    
+
     if (d.isIsolated) {
-      borderColor = Colors.grey;
+      borderColor = SG.muted;
     } else if (d.status == 'compromised') {
-      borderColor = Colors.red;
+      borderColor = SG.danger;
       isAlert = true;
     } else if (!d.isTrusted) {
-      borderColor = Colors.orange;
+      borderColor = SG.warning;
       isAlert = true;
     }
 
-    Widget cardContent = ListTile(
-      visualDensity: VisualDensity.compact,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-      leading: isAlert 
-        ? _AnimatedAlertIcon(icon: icon, color: borderColor)
-        : Icon(icon, color: borderColor, size: 28),
-      title: Text(d.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-      subtitle: Text(d.isIsolated ? '🚩 AISLADO' : d.status.toUpperCase(), style: const TextStyle(fontSize: 10)),
-      trailing: user?.role != 'viewer'
-        ? d.isIsolated
-          ? SizedBox(
-              height: 32,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 4)),
-                onPressed: () => ref.read(dataRepoProvider).reconnectDevice(user!.role, d.id),
-                child: const Text('RECONECTAR', style: TextStyle(fontSize: 10)),
-              ),
-            )
-          : SizedBox(
-              height: 32,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 4)),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => SimulatedProgressDialog(
-                      title: 'Aislando ${d.name}',
-                      steps: const [
-                        'Identificando puerto en Switch de Red...',
-                        'Bloqueando tráfico TCP/IP y UDP...',
-                        'Desconectando enlace físico lógico...',
-                        'Aplicando reglas de Firewall de contención...'
-                      ],
-                      onComplete: () {
-                        ref.read(dataRepoProvider).isolateDevice(user!.role, d.id);
-                      },
-                    )
-                  );
-                },
-                child: const Text('AISLAR', style: TextStyle(fontSize: 10)),
-              ),
-            )
-        : null,
+    Widget cardContent = Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: Row(
+        children: [
+          isAlert
+              ? _AnimatedAlertIcon(icon: icon, color: borderColor)
+              : Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: borderColor.withOpacity(0.1),
+                    border: Border.all(color: borderColor.withOpacity(0.3)),
+                  ),
+                  child: Icon(icon, color: borderColor, size: 20),
+                ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(d.name, style: SG.heading(11, color: Colors.white)),
+                Text(d.isIsolated ? '🚩 AISLADO' : d.status.toUpperCase(),
+                    style: SG.mono(9, color: borderColor)),
+              ],
+            ),
+          ),
+          if (user?.role != 'viewer')
+            d.isIsolated
+                ? SizedBox(
+                    height: 28,
+                    child: Container(
+                      decoration: SG.neonBorder(SG.safe, radius: 6, width: 1),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: SG.safe.withOpacity(0.1),
+                          foregroundColor: SG.safe,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          minimumSize: Size.zero,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                        onPressed: () => ref.read(dataRepoProvider).reconnectDevice(user!.role, d.id),
+                        child: Text('RECONECTAR', style: SG.heading(8, color: SG.safe)),
+                      ),
+                    ),
+                  )
+                : SizedBox(
+                    height: 28,
+                    child: Container(
+                      decoration: SG.neonBorder(SG.cyan, radius: 6, width: 1),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: SG.cyan.withOpacity(0.1),
+                          foregroundColor: SG.cyan,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          minimumSize: Size.zero,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        ),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => SimulatedProgressDialog(
+                              title: 'Aislando ${d.name}',
+                              steps: const [
+                                'Identificando puerto en Switch de Red...',
+                                'Bloqueando tráfico TCP/IP y UDP...',
+                                'Desconectando enlace físico lógico...',
+                                'Aplicando reglas de Firewall de contención...'
+                              ],
+                              onComplete: () {
+                                ref.read(dataRepoProvider).isolateDevice(user!.role, d.id);
+                              },
+                            ),
+                          );
+                        },
+                        child: Text('AISLAR', style: SG.heading(8, color: SG.cyan)),
+                      ),
+                    ),
+                  ),
+        ],
+      ),
     );
 
     return ExplainWrapper(
       title: d.name,
       techDesc: 'Dispositivo tipo ${d.type.toUpperCase()} con IP ${d.ip}. Estado actual: ${d.status}.',
-      analogyDesc: d.type == 'plc' ? 'Es el interruptor inteligente que obedece órdenes para mover una máquina.' : 'Es una computadora que procesa datos.',
-      child: isAlert && d.status == 'compromised'
-        ? _AnimatedAlertCard(borderColor: borderColor, child: InkWell(onTap: () => _showDeviceDetailsDialog(context, d), child: cardContent))
-        : Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            elevation: 1,
-            shape: RoundedRectangleBorder(side: BorderSide(color: borderColor, width: 2), borderRadius: BorderRadius.circular(8)),
-            color: borderColor.withOpacity(0.1),
-            child: InkWell(onTap: () => _showDeviceDetailsDialog(context, d), child: cardContent),
-          ),
+      analogyDesc: d.type == 'plc'
+          ? 'Es el interruptor inteligente que obedece órdenes para mover una máquina.'
+          : 'Es una computadora que procesa datos.',
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: isAlert && d.status == 'compromised'
+            ? _AnimatedAlertCard(
+                borderColor: borderColor,
+                child: InkWell(
+                  onTap: () => _showDeviceDetailsDialog(context, d),
+                  child: cardContent,
+                ),
+              )
+            : Container(
+                decoration: BoxDecoration(
+                  color: borderColor.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: borderColor.withOpacity(0.3), width: 1),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () => _showDeviceDetailsDialog(context, d),
+                  child: cardContent,
+                ),
+              ),
+      ),
     );
   }
+
   void _showDeviceDetailsDialog(BuildContext context, Device d) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.memory, color: Colors.blueAccent, size: 28),
-            const SizedBox(width: 8),
-            const Expanded(child: Text('Inspección de Hardware', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-          ],
-        ),
+        title: Row(children: [
+          Icon(Icons.memory_rounded, color: SG.cyan, size: 24),
+          const SizedBox(width: 8),
+          Expanded(child: Text('Inspección de Hardware', style: SG.heading(16))),
+        ]),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(
+                color: SG.surface,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: SG.border),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Nombre Físico: ${d.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text('Dirección Lógica (IP): ${d.ip}'),
-                  Text('Clasificación: ${d.type.toUpperCase()}'),
-                  Text('Ubicación Lógica: Zona ${d.zone} (Nivel Purdue)'),
+                  Text('Nombre Físico: ${d.name}', style: SG.heading(13, color: Colors.white)),
+                  Text('Dirección Lógica (IP): ${d.ip}', style: SG.mono(12)),
+                  Text('Clasificación: ${d.type.toUpperCase()}', style: SG.mono(12)),
+                  Text('Ubicación: Zona ${d.zone} (Purdue)', style: SG.mono(12)),
                 ],
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Estado de Seguridad:', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('Estado de Seguridad:', style: SG.heading(13)),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(d.status == 'compromised' ? Icons.coronavirus : Icons.verified_user, color: d.status == 'compromised' ? Colors.red : Colors.green),
-                const SizedBox(width: 8),
-                Text(d.status == 'compromised' ? 'INFECTADO / COMPROMETIDO' : 'OPERATIVO', style: TextStyle(color: d.status == 'compromised' ? Colors.red : Colors.green, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (d.isIsolated) ...[
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), border: Border.all(color: Colors.blueAccent), borderRadius: BorderRadius.circular(8)),
-                child: const Row(
-                  children: [
-                    Icon(Icons.link_off, color: Colors.blueAccent),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('AISLADO: El equipo está físicamente encendido, pero no puede enviar ni recibir datos por red.', style: TextStyle(fontSize: 12, color: Colors.blueAccent))),
-                  ],
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: (d.status == 'compromised' ? SG.danger : SG.safe).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: (d.status == 'compromised' ? SG.danger : SG.safe).withOpacity(0.3)),
+              ),
+              child: Row(children: [
+                Icon(
+                  d.status == 'compromised' ? Icons.coronavirus_rounded : Icons.verified_user_rounded,
+                  color: d.status == 'compromised' ? SG.danger : SG.safe,
+                  size: 20,
                 ),
-              )
-            ] else ...[
-              const Text('Aislado de red: NO (Conectado al Switch)', style: TextStyle(color: Colors.grey)),
-            ]
+                const SizedBox(width: 8),
+                Text(
+                  d.status == 'compromised' ? 'INFECTADO / COMPROMETIDO' : 'OPERATIVO',
+                  style: SG.heading(12, color: d.status == 'compromised' ? SG.danger : SG.safe),
+                ),
+              ]),
+            ),
+            if (d.isIsolated) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: SG.info.withOpacity(0.1),
+                  border: Border.all(color: SG.info.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(children: [
+                  Icon(Icons.link_off_rounded, color: SG.info, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('AISLADO: El equipo está encendido pero sin acceso a la red.', style: SG.body(11, color: SG.info))),
+                ]),
+              ),
+            ],
           ],
         ),
         actions: [
-          FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+          FilledButton(onPressed: () => Navigator.pop(context), child: Text('Cerrar', style: SG.heading(13, color: SG.cyan))),
         ],
       ),
     );
   }
+}
+
+class _ZoneConfig {
+  final String id;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final String tech;
+  final String analogy;
+  const _ZoneConfig(this.id, this.title, this.subtitle, this.icon, this.color, this.tech, this.analogy);
 }
 
 class _AnimatedAlertIcon extends StatefulWidget {
@@ -307,9 +438,24 @@ class _AnimatedAlertIconState extends State<_AnimatedAlertIcon> with SingleTicke
   }
   @override
   Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: Tween(begin: 1.0, end: 1.2).animate(_controller),
-      child: Icon(widget.icon, color: widget.color, size: 28),
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: widget.color.withOpacity(0.1 + _controller.value * 0.15),
+            boxShadow: [
+              BoxShadow(color: widget.color.withOpacity(_controller.value * 0.3), blurRadius: 8),
+            ],
+          ),
+          child: Transform.scale(
+            scale: 1.0 + _controller.value * 0.15,
+            child: Icon(widget.icon, color: widget.color, size: 20),
+          ),
+        );
+      },
     );
   }
 }
@@ -331,7 +477,7 @@ class _AnimatedAlertCardState extends State<_AnimatedAlertCard> with SingleTicke
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))..repeat(reverse: true);
-    _animation = Tween<double>(begin: 0.1, end: 0.4).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _animation = Tween<double>(begin: 0.05, end: 0.2).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -345,14 +491,15 @@ class _AnimatedAlertCardState extends State<_AnimatedAlertCard> with SingleTicke
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          elevation: 6,
-          shape: RoundedRectangleBorder(
-            side: BorderSide(color: widget.borderColor, width: 2), 
-            borderRadius: BorderRadius.circular(8)
+        return Container(
+          decoration: BoxDecoration(
+            color: widget.borderColor.withOpacity(_animation.value),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: widget.borderColor.withOpacity(0.5), width: 1.5),
+            boxShadow: [
+              BoxShadow(color: widget.borderColor.withOpacity(_animation.value * 0.5), blurRadius: 12),
+            ],
           ),
-          color: widget.borderColor.withOpacity(_animation.value),
           child: widget.child,
         );
       },

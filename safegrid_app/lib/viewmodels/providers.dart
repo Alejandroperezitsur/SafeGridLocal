@@ -114,5 +114,20 @@ final insightsProvider = Provider<List<Insight>>((ref) {
   return list;
 });
 
+final missionAccomplishedProvider = Provider<bool>((ref) {
+  final risk = ref.watch(riskScoreProvider);
+  final systems = ref.watch(systemsProvider).value ?? [];
+  final devices = ref.watch(devicesProvider).value ?? [];
+  final incidents = ref.watch(incidentsProvider).value ?? [];
+
+  if (incidents.isEmpty) return false; // Never show if no simulation has run
+
+  final allSystemsOk = systems.isNotEmpty && systems.every((s) => s.status == 'operational');
+  final allDevicesOk = devices.isNotEmpty && devices.every((d) => !d.isIsolated && d.status == 'online');
+  final noActiveThreats = risk == 0;
+
+  return noActiveThreats && allSystemsOk && allDevicesOk;
+});
+
 final demoStepProvider = StateProvider<int>((ref) => 0);
 final isDemoActiveProvider = StateProvider<bool>((ref) => false);
