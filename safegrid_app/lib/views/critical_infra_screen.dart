@@ -80,31 +80,49 @@ class CriticalInfraScreen extends ConsumerWidget {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                                      child: const Row(
+                                      child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.green)),
-                                          SizedBox(width: 8),
-                                          Text('Telemetría nominal', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                                          const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.green)),
+                                          const SizedBox(width: 8),
+                                          const Text('Telemetría nominal', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                                          const SizedBox(width: 8),
+                                          _AnimatedFlowIndicator(isWater: sys.name.contains('Water') || sys.name.contains('Agua')),
                                         ],
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-                                    Text(sys.name.contains('Water') ? 'Flujo de agua constante: 450 L/s' : 'Frecuencia de red: 60.01 Hz', style: const TextStyle(fontSize: 10, color: Colors.grey, fontStyle: FontStyle.italic)),
+                                    Text(sys.name.contains('Water') || sys.name.contains('Agua') ? 'Flujo de agua constante: 450 L/s' : 'Frecuencia de red: 60.01 Hz', style: const TextStyle(fontSize: 10, color: Colors.grey, fontStyle: FontStyle.italic)),
                                   ],
                                   if (sys.status != 'operational')
                                      _buildCausalityNote(sys),
                                   const Spacer(),
                                   if (sys.status != 'operational' && user?.role != 'viewer')
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton.icon(
-                                        style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, minimumSize: const Size(0, 44)),
-                                        onPressed: () => ref.read(dataRepoProvider).recoverSystem(user!.role, sys.id),
-                                        icon: const Icon(Icons.build_circle, size: 16),
-                                        label: const Text('RECUPERAR', style: TextStyle(fontSize: 11)),
-                                      ),
-                                    )
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, minimumSize: const Size(0, 44)),
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => SimulatedProgressDialog(
+                                                title: 'Recuperando ${sys.name}',
+                                                steps: const [
+                                                  'Reiniciando PLC a configuración segura (Modo ROM)...',
+                                                  'Verificando integridad de memoria (Anti-Malware)...',
+                                                  'Restableciendo comunicación con servidor SCADA...',
+                                                  'Activando proceso físico...'
+                                                ],
+                                                onComplete: () {
+                                                  ref.read(dataRepoProvider).recoverSystem(user!.role, sys.id);
+                                                },
+                                              )
+                                            );
+                                          },
+                                          icon: const Icon(Icons.build_circle, size: 16),
+                                          label: const Text('RECUPERAR', style: TextStyle(fontSize: 11)),
+                                        ),
+                                      )
                                 ],
                               ),
                             ),
@@ -130,29 +148,52 @@ class CriticalInfraScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.domain, color: Colors.blueAccent),
+            const Icon(Icons.domain, color: Colors.blueAccent, size: 28),
             const SizedBox(width: 8),
-            Text('Diagnóstico: ${sys.name}', style: const TextStyle(fontSize: 18)),
+            Expanded(child: Text('Diagnóstico Físico: ${sys.name}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Estado Operativo: ${sys.status.toUpperCase()}', style: TextStyle(fontWeight: FontWeight.bold, color: sys.status == 'operational' ? Colors.green : Colors.red)),
-            const SizedBox(height: 12),
-            const Text('Dependencias de Hardware:', style: TextStyle(fontWeight: FontWeight.bold)),
-            ...(sys.dependencies as List).map((dep) => Text('• $dep (Nivel 1/2)')).toList(),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: sys.status == 'operational' ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                border: Border.all(color: sys.status == 'operational' ? Colors.green : Colors.red),
+                borderRadius: BorderRadius.circular(8)
+              ),
+              child: Row(
+                children: [
+                  Icon(sys.status == 'operational' ? Icons.check_circle : Icons.warning, color: sys.status == 'operational' ? Colors.green : Colors.red),
+                  const SizedBox(width: 8),
+                  Text('Estado Actual: ${sys.status.toUpperCase()}', style: TextStyle(fontWeight: FontWeight.bold, color: sys.status == 'operational' ? Colors.green : Colors.red)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Dependencias Lógicas (Hardware):', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 4),
+            ...(sys.dependencies as List).map((dep) => Row(children: [const Icon(Icons.router, size: 16, color: Colors.grey), const SizedBox(width: 4), Text('$dep (Nivel 1/2)')])).toList(),
             if ((sys.dependencies as List).isEmpty) const Text('Ninguna externa (Sistema Raíz)'),
             const SizedBox(height: 16),
-            const Text('Análisis de Impacto (Cascada):', style: TextStyle(fontWeight: FontWeight.bold)),
-            Text('La interrupción de esta infraestructura detiene inmediatamente operaciones críticas, afectando servicios a nivel ciudad o procesos de manufactura clave.'),
+            const Row(
+              children: [
+                Icon(Icons.waves, color: Colors.orange, size: 20),
+                SizedBox(width: 8),
+                Text('Análisis de Impacto en Cascada:', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text('La interrupción de esta infraestructura detiene inmediatamente operaciones críticas. En el mundo real esto puede significar cortes de suministro a nivel ciudad o paros en líneas de ensamble de millones de dólares, demostrando por qué la seguridad OT es vital para la seguridad física.', style: TextStyle(fontSize: 13, height: 1.4)),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+          FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
         ],
       ),
     );
@@ -195,6 +236,53 @@ class CriticalInfraScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AnimatedFlowIndicator extends StatefulWidget {
+  final bool isWater;
+  const _AnimatedFlowIndicator({required this.isWater});
+
+  @override
+  State<_AnimatedFlowIndicator> createState() => _AnimatedFlowIndicatorState();
+}
+
+class _AnimatedFlowIndicatorState extends State<_AnimatedFlowIndicator> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (index) {
+            double opacity = 1.0 - ((_controller.value - (index * 0.3)).abs() % 1.0);
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 1.0),
+              child: Icon(
+                widget.isWater ? Icons.water_drop : Icons.bolt,
+                size: 12,
+                color: (widget.isWater ? Colors.blue : Colors.yellow).withOpacity(opacity.clamp(0.1, 1.0)),
+              ),
+            );
+          }),
+        );
+      },
     );
   }
 }

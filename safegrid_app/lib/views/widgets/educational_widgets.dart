@@ -97,11 +97,12 @@ class ExplainWrapper extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(Icons.help_outline, color: Colors.blueAccent),
-            const SizedBox(width: 8),
-            Text(title),
+            const Icon(Icons.school, color: Colors.blueAccent, size: 28),
+            const SizedBox(width: 12),
+            Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold))),
           ],
         ),
         content: Column(
@@ -109,18 +110,47 @@ class ExplainWrapper extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (learningMode) ...[
-              const Text('Analogía Simple:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
-              const SizedBox(height: 4),
-              Text(analogyDesc, style: const TextStyle(fontStyle: FontStyle.italic)),
-              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blueAccent.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.lightbulb, color: Colors.amber, size: 20),
+                        SizedBox(width: 8),
+                        Text('Para entenderlo fácil:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(analogyDesc, style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 14)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
             ],
-            const Text('Explicación Técnica:', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text(techDesc),
+            const Row(
+              children: [
+                Icon(Icons.memory, color: Colors.grey, size: 20),
+                SizedBox(width: 8),
+                Text('Detalle Técnico:', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(techDesc, style: const TextStyle(fontSize: 14)),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+          FilledButton.icon(
+            onPressed: () => Navigator.pop(context), 
+            icon: const Icon(Icons.check),
+            label: const Text('Entendido')
+          ),
         ],
       ),
     );
@@ -239,5 +269,78 @@ class TutorialOverlay extends ConsumerWidget {
         targetUIElement: 'nav_infra'
       ),
     ];
+  }
+}
+
+class SimulatedProgressDialog extends StatefulWidget {
+  final String title;
+  final List<String> steps;
+  final VoidCallback onComplete;
+
+  const SimulatedProgressDialog({
+    super.key,
+    required this.title,
+    required this.steps,
+    required this.onComplete,
+  });
+
+  @override
+  State<SimulatedProgressDialog> createState() => _SimulatedProgressDialogState();
+}
+
+class _SimulatedProgressDialogState extends State<SimulatedProgressDialog> {
+  int _currentStepIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startSimulation();
+  }
+
+  Future<void> _startSimulation() async {
+    for (int i = 0; i < widget.steps.length; i++) {
+      if (!mounted) return;
+      setState(() {
+        _currentStepIndex = i;
+      });
+      // Simulate real-world delay for each step
+      await Future.delayed(const Duration(milliseconds: 1500));
+    }
+    
+    if (mounted) {
+      widget.onComplete();
+      Navigator.of(context).pop(); // Close dialog
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false, // Prevent dismissing by tapping outside or back button
+      child: AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(widget.title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(color: Colors.blueAccent),
+            const SizedBox(height: 24),
+            Text(
+              widget.steps[_currentStepIndex],
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            LinearProgressIndicator(
+              value: (_currentStepIndex + 1) / widget.steps.length,
+              backgroundColor: Colors.grey.withOpacity(0.2),
+              color: Colors.blueAccent,
+            ),
+            const SizedBox(height: 8),
+            Text('Paso ${_currentStepIndex + 1} de ${widget.steps.length}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          ],
+        ),
+      ),
+    );
   }
 }

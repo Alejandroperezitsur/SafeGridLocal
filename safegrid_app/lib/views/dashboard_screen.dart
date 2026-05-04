@@ -189,10 +189,21 @@ class DashboardScreen extends ConsumerWidget {
                 children: [
                   Text('NIVEL DE IMPACTO', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: gaugeColor)),
                   const SizedBox(height: 16),
-                  Icon(riskScore >= 50 ? Icons.dangerous : (riskScore >= 6 ? Icons.warning_amber : Icons.shield_outlined), size: 80, color: gaugeColor),
-                  const SizedBox(height: 16),
-                  Text(riskLevel, style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold, color: gaugeColor)),
-                  Text('Impacto: $riskScore pts', style: const TextStyle(fontSize: 16)),
+                  TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0, end: riskScore.toDouble()),
+                    duration: const Duration(seconds: 2),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return Column(
+                        children: [
+                          Icon(value >= 50 ? Icons.dangerous : (value >= 6 ? Icons.warning_amber : Icons.shield_outlined), size: 80, color: gaugeColor),
+                          const SizedBox(height: 16),
+                          Text(riskLevel, style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold, color: gaugeColor)),
+                          Text('Impacto: ${value.toInt()} pts', style: const TextStyle(fontSize: 16)),
+                        ],
+                      );
+                    },
+                  ),
                   const SizedBox(height: 8),
                   Text(observation, textAlign: TextAlign.center, style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 12)),
                   const Spacer(),
@@ -344,17 +355,27 @@ class DashboardScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Interpretación de Impacto (NIST/ISA)'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
           children: [
-            _legendItem(Colors.green, '0-5 (Bajo)', 'Operación segura. Monitoreo constante activo.'),
-            _legendItem(Colors.yellow[700]!, '6-15 (Medio)', 'Intento de intrusión o actividad anómala detectada.'),
-            _legendItem(Colors.orange, '16-49 (Alto)', 'Compromiso de dispositivos. Se requiere respuesta SOC.'),
-            _legendItem(Colors.red, '50+ (Crítico)', 'Impacto masivo. La infraestructura crítica está en riesgo.'),
+            Icon(Icons.assessment, color: Colors.blueAccent),
+            SizedBox(width: 8),
+            Text('Interpretación de Impacto'),
           ],
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar'))],
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('El Puntaje de Riesgo (Risk Score) se calcula en base a la severidad de los incidentes detectados, similar a la norma ISA/IEC 62443 para redes industriales.', style: TextStyle(fontSize: 13, height: 1.4)),
+            const SizedBox(height: 16),
+            _legendItem(Colors.green, '0-5 (Bajo)', 'Operación segura. Monitoreo constante activo.'),
+            _legendItem(Colors.yellow[700]!, '6-15 (Medio)', 'Intento de intrusión o actividad anómala detectada.'),
+            _legendItem(Colors.orange, '16-49 (Alto)', 'Compromiso de dispositivos. Se requiere respuesta SOC (aislamiento).'),
+            _legendItem(Colors.red, '50+ (Crítico)', 'Impacto masivo. La infraestructura crítica física está en riesgo de paro o daño.'),
+          ],
+        ),
+        actions: [FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido'))],
       ),
     );
   }

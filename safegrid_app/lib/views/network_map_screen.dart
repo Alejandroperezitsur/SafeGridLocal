@@ -153,76 +153,125 @@ class NetworkMapScreen extends ConsumerWidget {
       isAlert = true;
     }
 
+    Widget cardContent = ListTile(
+      visualDensity: VisualDensity.compact,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+      leading: isAlert 
+        ? _AnimatedAlertIcon(icon: icon, color: borderColor)
+        : Icon(icon, color: borderColor, size: 28),
+      title: Text(d.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+      subtitle: Text(d.isIsolated ? '🚩 AISLADO' : d.status.toUpperCase(), style: const TextStyle(fontSize: 10)),
+      trailing: user?.role != 'viewer'
+        ? d.isIsolated
+          ? SizedBox(
+              height: 32,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 4)),
+                onPressed: () => ref.read(dataRepoProvider).reconnectDevice(user!.role, d.id),
+                child: const Text('RECONECTAR', style: TextStyle(fontSize: 10)),
+              ),
+            )
+          : SizedBox(
+              height: 32,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 4)),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => SimulatedProgressDialog(
+                      title: 'Aislando ${d.name}',
+                      steps: const [
+                        'Identificando puerto en Switch de Red...',
+                        'Bloqueando tráfico TCP/IP y UDP...',
+                        'Desconectando enlace físico lógico...',
+                        'Aplicando reglas de Firewall de contención...'
+                      ],
+                      onComplete: () {
+                        ref.read(dataRepoProvider).isolateDevice(user!.role, d.id);
+                      },
+                    )
+                  );
+                },
+                child: const Text('AISLAR', style: TextStyle(fontSize: 10)),
+              ),
+            )
+        : null,
+    );
+
     return ExplainWrapper(
       title: d.name,
       techDesc: 'Dispositivo tipo ${d.type.toUpperCase()} con IP ${d.ip}. Estado actual: ${d.status}.',
       analogyDesc: d.type == 'plc' ? 'Es el interruptor inteligente que obedece órdenes para mover una máquina.' : 'Es una computadora que procesa datos.',
-      child: Card(
-        margin: const EdgeInsets.only(bottom: 12),
-        elevation: isAlert ? 4 : 1,
-        shape: RoundedRectangleBorder(side: BorderSide(color: borderColor, width: 2), borderRadius: BorderRadius.circular(8)),
-        color: borderColor.withOpacity(0.1),
-        child: InkWell(
-          onTap: () => _showDeviceDetailsDialog(context, d),
-          child: ListTile(
-            visualDensity: VisualDensity.compact,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-            leading: isAlert 
-              ? _AnimatedAlertIcon(icon: icon, color: borderColor)
-              : Icon(icon, color: borderColor, size: 28),
-            title: Text(d.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-            subtitle: Text(d.isIsolated ? '🚩 AISLADO' : d.status.toUpperCase(), style: const TextStyle(fontSize: 10)),
-            trailing: user?.role != 'viewer'
-              ? d.isIsolated
-                ? SizedBox(
-                    height: 32,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 4)),
-                      onPressed: () => ref.read(dataRepoProvider).reconnectDevice(user!.role, d.id),
-                      child: const Text('RECONECTAR', style: TextStyle(fontSize: 10)),
-                    ),
-                  )
-                : SizedBox(
-                    height: 32,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 4)),
-                      onPressed: () => ref.read(dataRepoProvider).isolateDevice(user!.role, d.id),
-                      child: const Text('AISLAR', style: TextStyle(fontSize: 10)),
-                    ),
-                  )
-              : null,
+      child: isAlert && d.status == 'compromised'
+        ? _AnimatedAlertCard(borderColor: borderColor, child: InkWell(onTap: () => _showDeviceDetailsDialog(context, d), child: cardContent))
+        : Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            elevation: 1,
+            shape: RoundedRectangleBorder(side: BorderSide(color: borderColor, width: 2), borderRadius: BorderRadius.circular(8)),
+            color: borderColor.withOpacity(0.1),
+            child: InkWell(onTap: () => _showDeviceDetailsDialog(context, d), child: cardContent),
           ),
-        ),
-      ),
     );
   }
   void _showDeviceDetailsDialog(BuildContext context, Device d) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            const Icon(Icons.memory, color: Colors.blueAccent),
+            const Icon(Icons.memory, color: Colors.blueAccent, size: 28),
             const SizedBox(width: 8),
-            const Text('Detalles del Dispositivo', style: TextStyle(fontSize: 18)),
+            const Expanded(child: Text('Inspección de Hardware', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Nombre: ${d.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text('Dirección IP: ${d.ip}'),
-            Text('Tipo: ${d.type.toUpperCase()}'),
-            Text('Zona: Nivel ${d.zone == 'OT' ? '1/2' : d.zone == 'DMZ' ? '3.5' : '4/5'} (${d.zone})'),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: Colors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Nombre Físico: ${d.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Dirección Lógica (IP): ${d.ip}'),
+                  Text('Clasificación: ${d.type.toUpperCase()}'),
+                  Text('Ubicación Lógica: Zona ${d.zone} (Nivel Purdue)'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Estado de Seguridad:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(d.status == 'compromised' ? Icons.coronavirus : Icons.verified_user, color: d.status == 'compromised' ? Colors.red : Colors.green),
+                const SizedBox(width: 8),
+                Text(d.status == 'compromised' ? 'INFECTADO / COMPROMETIDO' : 'OPERATIVO', style: TextStyle(color: d.status == 'compromised' ? Colors.red : Colors.green, fontWeight: FontWeight.bold)),
+              ],
+            ),
             const SizedBox(height: 12),
-            Text('Estado: ${d.status.toUpperCase()}', style: TextStyle(color: d.status == 'compromised' ? Colors.red : Colors.green, fontWeight: FontWeight.bold)),
-            Text('Confianza: ${d.isTrusted ? "Verificado (Whitelist)" : "Desconocido (Riesgo)"}', style: TextStyle(color: d.isTrusted ? Colors.green : Colors.orange)),
-            Text('Aislado de red: ${d.isIsolated ? "SÍ (Desconectado del Switch)" : "NO"}', style: TextStyle(color: d.isIsolated ? Colors.blue : Colors.grey)),
+            if (d.isIsolated) ...[
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), border: Border.all(color: Colors.blueAccent), borderRadius: BorderRadius.circular(8)),
+                child: const Row(
+                  children: [
+                    Icon(Icons.link_off, color: Colors.blueAccent),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('AISLADO: El equipo está físicamente encendido, pero no puede enviar ni recibir datos por red.', style: TextStyle(fontSize: 12, color: Colors.blueAccent))),
+                  ],
+                ),
+              )
+            ] else ...[
+              const Text('Aislado de red: NO (Conectado al Switch)', style: TextStyle(color: Colors.grey)),
+            ]
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+          FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
         ],
       ),
     );
@@ -255,6 +304,52 @@ class _AnimatedAlertIconState extends State<_AnimatedAlertIcon> with SingleTicke
     return ScaleTransition(
       scale: Tween(begin: 1.0, end: 1.2).animate(_controller),
       child: Icon(widget.icon, color: widget.color, size: 28),
+    );
+  }
+}
+
+class _AnimatedAlertCard extends StatefulWidget {
+  final Widget child;
+  final Color borderColor;
+  const _AnimatedAlertCard({required this.child, required this.borderColor});
+
+  @override
+  State<_AnimatedAlertCard> createState() => _AnimatedAlertCardState();
+}
+
+class _AnimatedAlertCardState extends State<_AnimatedAlertCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.1, end: 0.4).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 6,
+          shape: RoundedRectangleBorder(
+            side: BorderSide(color: widget.borderColor, width: 2), 
+            borderRadius: BorderRadius.circular(8)
+          ),
+          color: widget.borderColor.withOpacity(_animation.value),
+          child: widget.child,
+        );
+      },
     );
   }
 }
