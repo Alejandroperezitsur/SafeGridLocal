@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../viewmodels/providers.dart';
 import 'widgets/educational_widgets.dart';
+import 'widgets/screen_onboarding.dart';
+import 'widgets/onboarding_data.dart';
 
 class IncidentsScreen extends ConsumerWidget {
   const IncidentsScreen({super.key});
@@ -11,7 +13,10 @@ class IncidentsScreen extends ConsumerWidget {
     final incidentsAsync = ref.watch(incidentsProvider);
     final user = ref.watch(currentUserProvider);
 
-    return incidentsAsync.when(
+    return ScreenOnboarding(
+      screenKey: 'incidents',
+      slides: kIncidentsSlides,
+      child: incidentsAsync.when(
       data: (incidents) {
         if (incidents.isEmpty) { 
           return Center(child: Column(
@@ -94,6 +99,7 @@ class IncidentsScreen extends ConsumerWidget {
       },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e,s) => Center(child: Text('Error: $e')),
+    ),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'views/login_screen.dart';
 import 'views/dashboard_screen.dart';
 import 'views/network_map_screen.dart';
@@ -8,6 +9,7 @@ import 'views/incidents_screen.dart';
 import 'views/critical_infra_screen.dart';
 import 'viewmodels/providers.dart';
 import 'views/widgets/educational_widgets.dart';
+import 'views/widgets/screen_onboarding.dart';
 
 void main() {
   runApp(const ProviderScope(child: SafeGridApp()));
@@ -102,6 +104,20 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
             onPressed: () {
               ref.read(demoStepProvider.notifier).state = 0;
               ref.read(isDemoActiveProvider.notifier).state = true;
+            },
+          ),
+          IconButton(
+            tooltip: 'Repetir tutoriales de pantalla',
+            icon: const Icon(Icons.replay, color: Colors.amber),
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('seen_onboardings');
+              ref.read(seenOnboardingsProvider.notifier).state = {};
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Tutoriales reiniciados. Navega a otra pestaña para verlos de nuevo.'), backgroundColor: Colors.amber),
+                );
+              }
             },
           ),
           IconButton(icon: const Icon(Icons.logout), onPressed: () => context.go('/login')),

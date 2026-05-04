@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../viewmodels/providers.dart';
 import 'widgets/educational_widgets.dart';
+import 'widgets/screen_onboarding.dart';
+import 'widgets/onboarding_data.dart';
 
 class CriticalInfraScreen extends ConsumerWidget {
   const CriticalInfraScreen({super.key});
@@ -12,7 +14,10 @@ class CriticalInfraScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
-      body: systemsAsync.when(
+      body: ScreenOnboarding(
+        screenKey: 'infra',
+        slides: kInfraSlides,
+        child: systemsAsync.when(
         data: (systems) {
           return Padding(
             padding: const EdgeInsets.all(24.0),
@@ -140,6 +145,7 @@ class CriticalInfraScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
+      ),
       ),
     );
   }

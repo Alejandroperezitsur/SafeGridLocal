@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../viewmodels/providers.dart';
 import 'widgets/educational_widgets.dart';
+import 'widgets/screen_onboarding.dart';
+import 'widgets/onboarding_data.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -35,7 +37,10 @@ class DashboardScreen extends ConsumerWidget {
     }
 
     return Scaffold(
-      body: Padding(
+      body: ScreenOnboarding(
+        screenKey: 'dashboard',
+        slides: kDashboardSlides,
+        child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: SingleChildScrollView(
           child: Column(
@@ -164,6 +169,7 @@ class DashboardScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

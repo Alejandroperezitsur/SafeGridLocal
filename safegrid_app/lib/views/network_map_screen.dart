@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../viewmodels/providers.dart';
 import '../models/models.dart';
 import 'widgets/educational_widgets.dart';
+import 'widgets/screen_onboarding.dart';
+import 'widgets/onboarding_data.dart';
 
 class NetworkMapScreen extends ConsumerWidget {
   const NetworkMapScreen({super.key});
@@ -13,7 +15,10 @@ class NetworkMapScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
 
     return Scaffold(
-      body: Column(
+      body: ScreenOnboarding(
+        screenKey: 'network',
+        slides: kNetworkSlides,
+        child: Column(
         children: [
           _buildMapLegend(context),
           Expanded(
@@ -59,6 +64,7 @@ class NetworkMapScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
