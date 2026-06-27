@@ -302,6 +302,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                               ),
                             ),
                           ),
+                          const SizedBox(height: 20),
+                          // Signature
+                          FadeIn(
+                            delay: const Duration(milliseconds: 900),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'DESARROLLADO Y FIRMADO POR:',
+                                  style: SG.mono(9, color: Colors.white.withOpacity(0.3)),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Alejandro Pérez Vázquez',
+                                  style: SG.mono(11, color: SG.cyan, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
