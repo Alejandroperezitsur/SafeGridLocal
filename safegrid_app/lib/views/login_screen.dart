@@ -197,21 +197,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                               ),
                             ),
 
-                          // IP Field
-                          FadeInUp(
-                            delay: const Duration(milliseconds: 300),
-                            child: TextField(
-                              controller: _ipController,
-                              style: SG.mono(14, color: Colors.white),
-                              decoration: InputDecoration(
-                                labelText: 'IP del Servidor',
-                                hintText: '192.168.1.100',
-                                hintStyle: SG.mono(13, color: Colors.white.withOpacity(0.2)),
-                                prefixIcon: Icon(Icons.dns_rounded, color: SG.cyan.withOpacity(0.5)),
+                          // Demo Mode Banner
+                          if (ApiClient.isDemo) ...[  
+                            FadeIn(
+                              delay: const Duration(milliseconds: 250),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: SG.amber.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: SG.amber.withOpacity(0.35)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.science_rounded, color: SG.amber, size: 18),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        'MODO DEMO ACTIVO — No se requiere servidor local.',
+                                        style: SG.mono(10, color: SG.amber),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
+                            const SizedBox(height: 16),
+                          ],
+                          // IP Field (hidden in demo mode)
+                          if (!ApiClient.isDemo)
+                            FadeInUp(
+                              delay: const Duration(milliseconds: 300),
+                              child: Column(
+                                children: [
+                                  TextField(
+                                    controller: _ipController,
+                                    style: SG.mono(14, color: Colors.white),
+                                    decoration: InputDecoration(
+                                      labelText: 'IP del Servidor',
+                                      hintText: '192.168.1.100',
+                                      hintStyle: SG.mono(13, color: Colors.white.withOpacity(0.2)),
+                                      prefixIcon: Icon(Icons.dns_rounded, color: SG.cyan.withOpacity(0.5)),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                ],
+                              ),
+                            ),
                           // Username
                           FadeInUp(
                             delay: const Duration(milliseconds: 400),
@@ -286,18 +319,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                           FadeIn(
                             delay: const Duration(milliseconds: 800),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                               decoration: BoxDecoration(
-                                color: SG.surface,
+                                color: ApiClient.isDemo ? SG.cyan.withOpacity(0.05) : SG.surface,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: SG.border),
+                                border: Border.all(color: ApiClient.isDemo ? SG.cyan.withOpacity(0.25) : SG.border),
                               ),
                               child: Column(
                                 children: [
-                                  Text('CREDENCIALES DE ACCESO', style: SG.mono(9, color: Colors.white.withOpacity(0.3))),
-                                  const SizedBox(height: 4),
-                                  Text('admin/admin123 · operator/op123 · viewer/view123',
-                                      style: SG.mono(10, color: SG.cyan.withOpacity(0.5))),
+                                  Text(
+                                    ApiClient.isDemo ? '🔑  CREDENCIALES DE DEMO' : 'CREDENCIALES DE ACCESO',
+                                    style: SG.mono(9, color: ApiClient.isDemo ? SG.cyan.withOpacity(0.8) : Colors.white.withOpacity(0.3)),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  if (ApiClient.isDemo) ...[
+                                    _credRow('admin', 'admin123', 'Administrador'),
+                                    const SizedBox(height: 3),
+                                    _credRow('operator', 'op123', 'Operador'),
+                                    const SizedBox(height: 3),
+                                    _credRow('viewer', 'view123', 'Observador'),
+                                  ] else
+                                    Text('admin/admin123 · operator/op123 · viewer/view123',
+                                        style: SG.mono(10, color: SG.cyan.withOpacity(0.5))),
                                 ],
                               ),
                             ),
@@ -330,6 +373,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
           ),
         ],
       ),
+    );
+  }
+
+  Widget _credRow(String user, String pass, String role) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(user, style: SG.mono(10, color: SG.cyan)),
+        Text(pass, style: SG.mono(10, color: Colors.white54)),
+        Text(role, style: SG.mono(9, color: Colors.white30)),
+      ],
     );
   }
 }
