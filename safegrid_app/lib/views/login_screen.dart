@@ -315,7 +315,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                                 const SizedBox(height: 4),
                                 Text(
                                   'Alejandro Pérez Vázquez',
-                                  style: SG.mono(11, color: SG.cyan, fontWeight: FontWeight.bold),
+                                  style: SG.mono(11, color: SG.cyan).copyWith(fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
